@@ -5,6 +5,7 @@ import { ChevronRight, Home as HomeIcon, Search, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../utils/api";
+import { toast } from "../utils/toast";
 
 export default function Product() {
   const [products,  setProducts]  = useState([]);
@@ -20,9 +21,10 @@ export default function Product() {
       setError(null);
       const res = await api.get("/products");
       setProducts(res.data.products || res.data || []);
-    } catch {
-      // FIX: was console.error — user saw nothing. Now sets error state for UI
-      setError("Failed to load products. Please try again.");
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to load products. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import api from "../utils/api";
+import { toast } from "../utils/toast";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -31,11 +33,18 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
     setError("");
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      await api.post("/users/forgot-password", { email });
       setIsSubmitted(true);
-    }, 1500);
+      toast.success("Password reset email sent.");
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to send reset email.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

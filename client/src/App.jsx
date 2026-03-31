@@ -1,32 +1,30 @@
 // App.jsx
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
 import { TooltipProvider } from "./ui/tooltip.jsx";
-import { Toaster } from "./ui/toaster.jsx";
+import { Toaster } from "./ui/Toaster.jsx";
 
 // USER PAGES
 import Home from "./pages/Home.jsx";
-import CategoryPage from "./pages/CategoryPage.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
-import Product from "./pages/Product.jsx";
 import Profile from "./pages/Profile.jsx";
 import Orders from "./pages/Order.jsx";
 import OrderHistory from "./pages/OrderHistory.jsx";
 import ProductDetails from "./pages/ProductDetails.jsx";
 import Cart from "./pages/Cart.jsx";
 import BuyNow from "./pages/buyNow.jsx";
-import SubCategoryProducts from "./pages/SubCategoryProducts.jsx";
 import OrderDetails from "./pages/OrderDetails.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import BuyAll from "./pages/BuyAll.jsx";
-import OrderSuccess from "./pages/OrderSuccess.jsx";
 import Payment from "./pages/Pyment.jsx";
 
 // ADMIN LAYOUT + PAGES
@@ -42,8 +40,25 @@ import AdminFeedback from "../admin/pages/Feedbacks.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
 import Inventory from "../admin/pages/Inventory.jsx";
 import Reports from "../admin/pages/Reports.jsx";
+import Refunds from "../admin/pages/Refunds.jsx";
+import Manifests from "../admin/pages/Manifests.jsx";
 
 const queryClient = new QueryClient();
+const CategoryPage = lazy(() => import("./pages/CategoryPage.jsx"));
+const SubCategoryProducts = lazy(() => import("./pages/SubCategoryProducts.jsx"));
+const Product = lazy(() => import("./pages/Product.jsx"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess.jsx"));
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center bg-stone-50">
+      <div className="flex items-center gap-3 text-stone-500 text-sm font-medium">
+        <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
+        Loading page...
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -51,6 +66,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               {/* ================= USER ROUTES ================= */}
               <Route path="/" element={<Home />} />
@@ -122,6 +138,7 @@ function App() {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* ================= ADMIN ROUTES ================= */}
               <Route path="/admin" element={<AdminLayout />}>
@@ -130,6 +147,8 @@ function App() {
                 <Route path="subcategories" element={<AdminSubCategories />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />
+                <Route path="refunds" element={<Refunds />} />
+                <Route path="manifests" element={<Manifests />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="payments" element={<AdminPayments />} />
                 <Route path="feedback" element={<AdminFeedback />} />
@@ -140,6 +159,7 @@ function App() {
               {/* ================= 404 ================= */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </Router>
         </TooltipProvider>
     </QueryClientProvider>

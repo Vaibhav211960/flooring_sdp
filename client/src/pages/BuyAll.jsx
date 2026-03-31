@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import {
   ChevronRight, Truck, ShieldCheck,
   Package, Loader2, ShoppingBag, Gift,

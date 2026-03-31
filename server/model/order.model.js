@@ -67,7 +67,26 @@ const orderSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: "Payment", // Links to your Payment model
     required: true
-  },
+    },
+    adminNote: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    refundStatus: {
+      type: String,
+      enum: ["not_required", "pending", "initiated", "completed"],
+      default: "pending",
+    },
+    refundInitiatedAt: {
+      type: Date,
+      default: null,
+    },
+    refundNote: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     orderDate: {
       type: Date,
       default: Date.now,

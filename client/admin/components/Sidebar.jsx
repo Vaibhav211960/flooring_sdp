@@ -9,6 +9,8 @@ import {
   MessageSquare,
   Warehouse,
   BarChart2,   // Reports icon
+  ClipboardList,
+  RotateCcw,
   LogOut,
 } from "lucide-react";
 
@@ -46,6 +48,8 @@ const Sidebar = () => {
         <SidebarLink to="/admin/categories"        icon={<Layers size={18} />}          label="Categories"     base={baseClass} active={activeClass} inactive={inactiveClass} />
         <SidebarLink to="/admin/subcategories"     icon={<Layers size={18} />}          label="Sub-Categories" base={baseClass} active={activeClass} inactive={inactiveClass} />
         <SidebarLink to="/admin/orders"            icon={<ReceiptText size={18} />}     label="Orders"         base={baseClass} active={activeClass} inactive={inactiveClass} />
+        <SidebarLink to="/admin/refunds"           icon={<RotateCcw size={18} />}       label="Refunds"        base={baseClass} active={activeClass} inactive={inactiveClass} />
+        <SidebarLink to="/admin/manifests"         icon={<ClipboardList size={18} />}   label="Manifests"      base={baseClass} active={activeClass} inactive={inactiveClass} />
         <SidebarLink to="/admin/customers"         icon={<Users size={18} />}           label="Customers"      base={baseClass} active={activeClass} inactive={inactiveClass} />
         <SidebarLink to="/admin/payments"          icon={<CreditCard size={18} />}      label="Payments"       base={baseClass} active={activeClass} inactive={inactiveClass} />
         <SidebarLink to="/admin/feedback"          icon={<MessageSquare size={18} />}   label="Feedback"       base={baseClass} active={activeClass} inactive={inactiveClass} />

@@ -8,6 +8,8 @@ import {
   getOrdersByUserId,
   updateOrderStatus,
   deleteOrder,
+  getRefundQueue,
+  initiateRefund,
   // ── 4 new report pipeline functions ──
   getRevenueReport,
   getOrdersSummary,
@@ -33,6 +35,8 @@ router.put("/cancel/:id", verifyToken, cancelOrder);
 router.get("/admin/getAll",            getAllOrders);
 router.get("/admin/user/:userId",      getOrdersByUserId);
 router.put("/admin/update-status/:id", updateOrderStatus);
+router.get("/admin/refunds",           getRefundQueue);
+router.put("/admin/refunds/:id/initiate", initiateRefund);
 router.delete("/admin/delete/:id",     deleteOrder);
 
 // ── Admin: report endpoints ───────────────────────────────────────────────────

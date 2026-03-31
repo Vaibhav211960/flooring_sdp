@@ -11,6 +11,7 @@ import categoryRoutes from "./routes/category.route.js";
 import subCategoryRoutes from "./routes/subCategory.route.js";
 import feedbackRoutes from "./routes/feedback.route.js";
 import paymentRoutes from "./routes/payment.route.js";
+import manifestRoutes from "./routes/manifest.route.js";
 import dbConnection from "./db/db.js";
 
 //admin routes
@@ -41,6 +42,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/manifests", manifestRoutes);
 
 app.get("/api/test", () => {
   console.log("hyy");

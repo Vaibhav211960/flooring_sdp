@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import {
   CreditCard,
   ChevronRight,
@@ -32,6 +32,7 @@ import AddToCartButton from "../components/AddToCartBtn.jsx";
 import ProductFeedbackPanel from "../components/ProductFeedbackPanel";
 import api from "../utils/api";
 import { isLoggedIn } from "../utils/auth";
+import { BOX_QUANTITY, incrementByBox, decrementByBox, clampToBoxQuantity } from "../utils/quantity";
 
 // mm → feet conversion
 const mmToFt = (mm) => (mm || 0) * 0.00328084;
@@ -41,7 +42,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
-  const [qty, setQty] = useState(10);
+  const [qty, setQty] = useState(BOX_QUANTITY);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -61,6 +62,14 @@ export default function ProductDetails() {
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
+
+  useEffect(() => {
+    if (!product) return;
+    setQty((currentQty) => {
+      const normalizedQty = clampToBoxQuantity(currentQty, product.stock);
+      return normalizedQty || BOX_QUANTITY;
+    });
+  }, [product]);
 
   // useMemo: coverage calculation — only recomputes when product or qty changes
   // OLD: was a plain function called in JSX — recomputed on every render
@@ -426,12 +435,12 @@ export default function ProductDetails() {
                     Quantity
                   </span>
                   <span className="text-[10px] text-stone-400 italic">
-                    Units in {product.unit}s
+                    1 box = {BOX_QUANTITY} units
                   </span>
                 </div>
                 <div className="flex items-center bg-white border border-stone-200 rounded-lg overflow-hidden shadow-sm">
                   <button
-                    onClick={() => setQty((q) => Math.max(10, q - 1))}
+                    onClick={() => setQty((q) => decrementByBox(q))}
                     className="px-4 py-2 hover:bg-stone-100 text-stone-600 transition-colors"
                   >
                     −
@@ -440,8 +449,8 @@ export default function ProductDetails() {
                     {qty}
                   </span>
                   <button
-                    onClick={() => setQty((q) => Math.max(10, q + 1))}
-                    disabled={qty >= product.stock}
+                    onClick={() => setQty((q) => incrementByBox(q, product.stock))}
+                    disabled={qty + BOX_QUANTITY > product.stock}
                     className="px-4 py-2 hover:bg-stone-100 text-stone-600 transition-colors disabled:opacity-30"
                   >
                     +
@@ -479,13 +488,13 @@ export default function ProductDetails() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleBuyNow}
-                  disabled={product.stock === 0 || !product.isActive}
+                  disabled={product.stock < BOX_QUANTITY || !product.isActive}
                   className="w-full h-14 bg-stone-900 text-stone-50 hover:bg-stone-800 text-xs font-bold uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-3 shadow-xl transition-all active:scale-[0.98] disabled:opacity-40"
                 >
                   <CreditCard size={16} className="text-amber-500" />
                   {!product.isActive
                     ? "Unavailable"
-                    : product.stock === 0
+                    : product.stock < BOX_QUANTITY
                       ? "Out of Stock"
                       : "Proceed to Checkout"}
                 </button>
@@ -493,7 +502,7 @@ export default function ProductDetails() {
                 <AddToCartButton
                   product={product}
                   qty={qty}
-                  disabled={product.stock === 0 || !product.isActive}
+                  disabled={product.stock < BOX_QUANTITY || !product.isActive}
                   className="h-14 text-[10px] font-bold uppercase tracking-widest rounded-xl bg-white border border-stone-200 text-stone-900 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm"
                 />
               </div>
@@ -515,3 +524,4 @@ export default function ProductDetails() {
     </div>
   );
 }
+

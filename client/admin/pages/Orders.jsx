@@ -5,7 +5,7 @@ import {
   Printer, Loader2, Search, SlidersHorizontal,
   Trash2, FileText,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 
 // ── Shared axios instance — same pattern as all other files ──
 // FIX: was using plain axios with repeated headers everywhere

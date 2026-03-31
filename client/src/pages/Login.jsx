@@ -4,7 +4,7 @@ import {
   Eye, EyeOff, Lock, Mail, ChevronRight,
   Home as HomeIcon, UserCircle, Loader2,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 // FIX: was localStorage.setItem("UserToken", token)
@@ -15,13 +15,14 @@ import api from "../utils/api";
 // ── Validators at module level ────────────────────────────────────────────────
 // FIX: was defined inside component — recreated on every render
 const validate = (field, value) => {
+  const s = String(value ?? "");
   if (field === "email") {
-    if (!value.trim()) return "Email is required.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address.";
+    if (!s.trim()) return "Email is required.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return "Enter a valid email address.";
   }
   if (field === "password") {
-    if (!value.trim()) return "Password is required.";
-    if (value.length < 6) return "Password must be at least 6 characters.";
+    if (!s.trim()) return "Password is required.";
+    if (s.length < 6) return "Password must be at least 6 characters.";
   }
   return "";
 };
@@ -53,6 +54,8 @@ export default function Login() {
       // Save token first — THEN fire event — THEN navigate
       // Order matters: token must be in localStorage before Navbar reads it
       setUserToken(res.data.token);
+      console.log(res.data.token);
+      
 
       // Tell Navbar to re-fetch user profile immediately
       // (pathname won't change if user was already on "/" before login)

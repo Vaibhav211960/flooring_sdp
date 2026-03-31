@@ -4,7 +4,7 @@ const paymentSchema = new mongoose.Schema(
     {
         paymentMode: {
             type: String,
-            enum: ["card", "cod", "upi"],
+            enum: ["CARD", "COD", "UPI", "Net Banking"],
             required: true,
         },
         amount: {
@@ -23,8 +23,17 @@ const paymentSchema = new mongoose.Schema(
         },
         paymentStatus: {
             type: String,
-            enum: ["confirmed", "processing", "cancelled"],
+            enum: ["confirmed", "processing", "cancelled", "refunded"],
             required: true,
+        },
+        refundStatus: {
+            type: String,
+            enum: ["not_required", "pending", "initiated", "completed"],
+            default: "pending",
+        },
+        refundInitiatedAt: {
+            type: Date,
+            default: null,
         },
     },
     { timestamps: true }

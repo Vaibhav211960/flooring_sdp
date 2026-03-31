@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import {
   Home as HomeIcon, ChevronRight, Package, Receipt,
   ArrowRight, Loader2,

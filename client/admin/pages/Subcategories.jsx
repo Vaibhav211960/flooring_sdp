@@ -1,19 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../../src/utils/adminApi";
 import {
   Plus, Edit3, Trash2, GitCommit, Link as LinkIcon,
   ImageIcon, AlignLeft, Loader2, X, ToggleLeft, ToggleRight,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 
-// ── Same shared axios instance pattern ──
-// FIX: was using "adminToken" — unified to "token" to match Products.jsx
-const api = axios.create({ baseURL: "http://localhost:5000/api" });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // ← unified key
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 // ── Module-level caches ──
 // OLD: categories fetched from server every time the modal opened
@@ -348,10 +340,16 @@ SubCategoryRow.displayName = "SubCategoryRow";
 
 // ── Validators ────────────────────────────────────────────────────────────────
 const SC_VALIDATORS = {
-  name:        (v) => (!v?.trim() ? "Name is required" : v.trim().length < 2 ? "Name too short" : ""),
+  name:        (v) => {
+    const s = String(v ?? "").trim();
+    return !s ? "Name is required" : s.length < 2 ? "Name too short" : "";
+  },
   categoryId:  (v) => (!v ? "Parent category is required" : ""),
-  imageUrl:    (v) => (v && !v.startsWith("http") ? "Must be a valid URL starting with http" : ""),
-  description: ()  => "",
+  imageUrl:    (v) => {
+    const s = String(v ?? "").trim();
+    return !s ? "Image URL is required" : !s.startsWith("http") ? "Must be a valid URL starting with http" : "";
+  },
+  description: (v) => (!String(v ?? "").trim() ? "Description is required" : ""),
   isActive:    ()  => "",
 };
 
@@ -574,3 +572,4 @@ const SubCategoryModal = ({ onClose, onSave, subCategory }) => {
 };
 
 export default SubCategories;
+

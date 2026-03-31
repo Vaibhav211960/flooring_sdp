@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 import {
   IndianRupee, ArrowUpRight, CheckCircle2, Clock,
   AlertCircle, X, Download, Loader2, Search,

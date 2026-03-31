@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios from "axios";
 import { ChevronRight, Home as HomeIcon, SlidersHorizontal, LayoutGrid, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { ProductCard } from "../components/ProductCard";
+import api from "../utils/api";
+import { toast } from "../utils/toast";
 
 export default function CategoryProducts() {
   const { catId } = useParams();
@@ -17,15 +18,17 @@ export default function CategoryProducts() {
     const fetchCategoryData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const [subRes, prodRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/subcategories/${catId}`),
-          axios.get(`http://localhost:5000/api/products/subcategory/${catId}`)
+          api.get(`/subcategories/${catId}`),
+          api.get(`/products/subcategory/${catId}`)
         ]);
         if (subRes.data.subCategory) setSubcategory(subRes.data.subCategory);
         setProducts(prodRes.data.products);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Could not load products for this collection.");
+        const message = err.response?.data?.message || "Could not load products for this collection.";
+        setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +116,13 @@ export default function CategoryProducts() {
         <div className="container max-w-7xl mx-auto px-6">
           {error ? (
             <div className="text-center py-16 bg-red-50 rounded-2xl border border-red-100">
-              <p className="text-red-600 font-medium text-sm">{error}</p>
+              <p className="text-red-600 font-medium text-sm mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 h-10 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           ) : products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

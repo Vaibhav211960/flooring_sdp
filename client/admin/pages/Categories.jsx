@@ -1,18 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../../src/utils/adminApi";
 import { Plus, Edit3, Trash2, ImageIcon, AlignLeft, Globe, Loader2, X, ToggleLeft, ToggleRight } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 
-// ── Single axios instance — same pattern as Products.jsx ──
-// FIX: Categories was using "adminToken" but Products uses "token" — unified here to "token"
-// OLD: every call repeated the full URL + token header manually
-// NEW: one instance, one interceptor, zero repetition
-const api = axios.create({ baseURL: "http://localhost:5000/api" });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // ← unified key
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 // ── Module-level cache so CategoryModal never refetches on second open ──
 // (reused by SubCategories modal too if they share the same bundle)
@@ -336,9 +326,15 @@ CategoryRow.displayName = "CategoryRow";
 
 // ── Validators ────────────────────────────────────────────────────────────────
 const VALIDATORS = {
-  name:        (v) => (!v?.trim() ? "Collection name is required" : v.trim().length < 2 ? "Name too short" : ""),
-  imageUrl:    (v) => (v && !v.startsWith("http") ? "Must be a valid URL starting with http" : ""),
-  description: ()  => "",
+  name:        (v) => {
+    const s = String(v ?? "").trim();
+    return !s ? "Collection name is required" : s.length < 2 ? "Name too short" : "";
+  },
+  imageUrl:    (v) => {
+    const s = String(v ?? "").trim();
+    return !s ? "Image URL is required" : !s.startsWith("http") ? "Must be a valid URL starting with http" : "";
+  },
+  description: (v) => (!String(v ?? "").trim() ? "Description is required" : ""),
   isActive:    ()  => "",
 };
 
@@ -524,3 +520,4 @@ const CategoryModal = ({ onClose, onSave, category }) => {
 };
 
 export default Categories;
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import {
   CreditCard, Smartphone, Truck, ShieldCheck,
   Lock, ChevronLeft, Loader2, Home as HomeIcon, ChevronRight,
@@ -83,7 +83,13 @@ export default function Payment() {
           localStorage.removeItem("pending_qty");
         }
 
-        navigate(`/orders/${response.data.order._id}`);
+        navigate("/order-success", {
+          state: {
+            order: response.data.order,
+            redirectTo: `/orders/${response.data.order._id}`,
+            redirectDelay: 10,
+          },
+        });
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Transaction failed. Please check your connection.");

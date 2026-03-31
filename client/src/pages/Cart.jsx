@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import CartItem from "../components/CartItem";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { toast } from "../utils/toast";
 
 // ─── Shared Pricing Logic ────────────────────────────────────────────────────
 // Discount: subtotal > ₹10,000 → 5% | > ₹5,000 → 2% | else 0%
@@ -46,6 +47,10 @@ const Cart = () => {
   const upsell          = useMemo(() => getUpsellMessage(subtotal),   [subtotal]);
 
   const handleProceedToCheckout = () => {
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty.");
+      return;
+    }
     setIsCheckingOut(true);
     const productsSnapshot = cartItems.map((item) => ({
       productId: item._id,
@@ -56,6 +61,7 @@ const Cart = () => {
       total:     item.total,
     }));
     localStorage.setItem("checkout_products", JSON.stringify(productsSnapshot));
+    toast.success("Cart saved. Moving to checkout.");
     navigate("/buy-all");
     setIsCheckingOut(false);
   };

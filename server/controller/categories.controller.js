@@ -32,9 +32,8 @@ export const getCategoryById = async (req, res) => {
  */
 export const createCategory = async (req, res) => {
   try {
-    const { name, description, image , status } = req.body;
-
-    const isActive = status === "inactive" ? false : true;
+    const { name, description, image, status, isActive } = req.body;
+    const resolvedActive = typeof isActive === "boolean" ? isActive : status !== "inactive";
     if (!name || !description) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -48,7 +47,7 @@ export const createCategory = async (req, res) => {
       name,
       description,
       image,
-      isActive
+      isActive: resolvedActive
     });
 
     res.status(201).json({
@@ -65,16 +64,19 @@ export const createCategory = async (req, res) => {
  */
 export const updateCategory = async (req, res) => {
   try {
-    const { name, description, image , status} = req.body;
+    const { name, description, image, status, isActive } = req.body;
+    const updateData = {};
 
-    const isActive = status === "inactive" ? false : true;
-    console.log(isActive);
-    
-    const category = await Category.findByIdAndUpdate(
-      req.params.id,
-      { name, description, image , isActive },
-      { new: true }
-    );
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (image !== undefined) updateData.image = image;
+    if (typeof isActive === "boolean") updateData.isActive = isActive;
+    else if (status !== undefined) updateData.isActive = status !== "inactive";
+
+    const category = await Category.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });

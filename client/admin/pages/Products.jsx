@@ -1,21 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../../src/utils/adminApi";
 import { useNavigate } from "react-router-dom";
 import {
   ImageIcon, IndianRupee, Package,
   Plus, Droplets, Trash2, Edit3, Search, Loader2, X, ToggleLeft, ToggleRight
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 
-// ── Single axios instance with base URL & auth header injected automatically ──
-// OLD: every call did axios.get("http://localhost:5000/api/...", { headers: { Authorization: `Bearer ${token}` } })
-// NEW: one instance handles baseURL + token for ALL requests — change URL in one place, not 10
-const api = axios.create({ baseURL: "http://localhost:5000/api" });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 // ── Subcategory cache — lives OUTSIDE components so it survives re-renders ──
 // OLD: modal fetched subcategories from server every single time it opened
@@ -440,16 +431,25 @@ ProductRow.displayName = "ProductRow";
 
 // ── Validation rules ──────────────────────────────────────────────────────────
 const VALIDATORS = {
-  name:          (v, isEdit) => isEdit ? "" : (!v?.trim() ? "Required" : ""),
-  sku:           (v, isEdit) => isEdit ? "" : (!v?.trim() ? "Required" : ""),
-  materialType:  (v)         => !v?.trim() ? "Required" : "",
+  name:          (v, isEdit) => {
+    const s = String(v ?? "").trim();
+    return isEdit ? "" : (!s ? "Required" : "");
+  },
+  sku:           (v, isEdit) => {
+    const s = String(v ?? "").trim();
+    return isEdit ? "" : (!s ? "Required" : "");
+  },
+  materialType:  (v)         => !String(v ?? "").trim() ? "Required" : "",
   subCategoryId: (v)         => !v ? "Required" : "",
   price:         (v)         => (!v || Number(v) <= 0) ? "Enter a valid price" : "",
   pricePerBox:   (v)         => (!v || Number(v) <= 0) ? "Enter a valid price per box" : "",
   stock:         (v)         => (v === "" || Number(v) < 0) ? "Enter a valid stock value" : "",
   lengthMM:      (v)         => (!v || Number(v) <= 0) ? "Enter a valid length" : "",
   widthMM:       (v)         => (!v || Number(v) <= 0) ? "Enter a valid width" : "",
-  image:         (v)         => !v?.trim() ? "Required" : !v.startsWith("http") ? "Must be a valid URL" : "",
+  image:         (v)         => {
+    const s = String(v ?? "").trim();
+    return !s ? "Required" : !s.startsWith("http") ? "Must be a valid URL" : "";
+  },
 };
 
 const EMPTY_FORM = {
@@ -808,3 +808,4 @@ const ProductModal = ({ onClose, onSave, product }) => {
 };
 
 export default Products;
+

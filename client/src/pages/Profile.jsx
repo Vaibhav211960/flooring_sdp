@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 // FIX: was importing Button from "../ui/button" and useToast from "../hooks/useToast"
 // These are inconsistent with the rest of the codebase which uses react-hot-toast
 // and plain HTML buttons. Removed both.

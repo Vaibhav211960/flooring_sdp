@@ -5,6 +5,21 @@ import User from "../model/user.model.js";
 import mongoose from "mongoose";
 
 const REPORT_TIMEZONE = "Asia/Kolkata";
+const BOX_QUANTITY = 10;
+
+const normalizeUnits = (value) => {
+  const units = Number(value);
+  if (!Number.isFinite(units)) return NaN;
+  return Math.trunc(units);
+};
+
+const restoreProductStock = async (items = []) => {
+  await Promise.all(
+    items.map(({ productId, units }) =>
+      Product.findByIdAndUpdate(productId, { $inc: { stock: units } })
+    )
+  );
+};
 
 const getReportDateRange = (from, to) => {
   const fromDate = from
@@ -252,48 +267,95 @@ export const getReportConfig = async (_req, res) => {
 /** CUSTOMER: Place an order */
 export const createOrder = async (req, res) => {
   try {
-    const { items, netBill, paymentMode, shippingAddress, paymentMethod } = req.body;
-    const userId = req.user._id;
+    const { items, shippingAddress, netBill , paymentMode, paymentMethod } = req.body;
+    const userId = "69a125be11ed30f46315678c";
     if (!userId) return res.status(401).json({ message: "User authentication failed" });
     if (!items || items.length === 0) return res.status(400).json({ message: "No items in order" });
 
     const productIds = items.map((item) => item.productId).filter(Boolean);
     let productMap = {};
     if (productIds.length > 0) {
-      const products = await Product.find({ _id: { $in: productIds } }, "name price");
+      const products = await Product.find({ _id: { $in: productIds } }, "name price stock isActive");
       productMap = Object.fromEntries(products.map((p) => [p._id.toString(), p]));
     }
 
     const sanitizedItems = items.map((item) => {
       const dbProduct = productMap[item.productId?.toString()];
+      const units = normalizeUnits(item.units || item.quantity || 0);
+      const pricePerUnit = dbProduct?.price || item.pricePerUnit || item.price || 0;
       return {
         productId:    item.productId,
         productName:  dbProduct?.name       || item.productName  || item.name || "Product",
-        pricePerUnit: dbProduct?.price      || item.pricePerUnit || item.price || 0,
-        units:        item.units            || item.quantity     || 1,
-        totalAmount:  item.totalAmount      || item.total
-                      || (item.pricePerUnit || item.price || 0) * (item.units || item.quantity || 1),
+        pricePerUnit,
+        units,
+        totalAmount:  item.totalAmount || item.total || pricePerUnit * units,
       };
     });
 
-    const newPayment = await Payment.create({
-      paymentMode: paymentMethod, amount: netBill,
-      paymentStatus: paymentMode === "COD" ? "processing" : "confirmed",
-      orderId: new mongoose.Types.ObjectId(),
-    });
+    for (const item of sanitizedItems) {
+      const dbProduct = productMap[item.productId?.toString()];
+      if (!dbProduct) {
+        return res.status(404).json({ message: `Product not found for item ${item.productName}.` });
+      }
+      if (!dbProduct.isActive) {
+        return res.status(400).json({ message: `${dbProduct.name} is currently unavailable.` });
+      }
+      if (item.units < BOX_QUANTITY || item.units % BOX_QUANTITY !== 0) {
+        return res.status(400).json({ message: `Quantity for ${dbProduct.name} must be ordered in boxes of ${BOX_QUANTITY}.` });
+      }
+      if (item.units > dbProduct.stock) {
+        return res.status(400).json({ message: `${dbProduct.name} only has ${dbProduct.stock} units available.` });
+      }
+    }
 
-    const order = await Order.create({
-      userId, items: sanitizedItems, shippingAddress,
-      netBill, paymentMode, paymentId: newPayment._id, orderStatus: "pending",
-    });
+    const deductedItems = [];
+    try {
+      for (const item of sanitizedItems) {
+        const updatedProduct = await Product.findOneAndUpdate(
+          { _id: item.productId, stock: { $gte: item.units } },
+          { $inc: { stock: -item.units } },
+          { new: true }
+        );
 
-    newPayment.orderId = order._id;
-    await newPayment.save();
+        if (!updatedProduct) {
+          throw new Error(`Stock is no longer available for ${item.productName}.`);
+        }
 
-    res.status(201).json({ message: "Order placed successfully", order });
+        deductedItems.push({ productId: item.productId, units: item.units });
+      }
+    } catch (stockErr) {
+      await restoreProductStock(deductedItems);
+      return res.status(400).json({ message: stockErr.message || "Unable to reserve stock for this order." });
+    }
+
+    try {
+      const newPayment = await Payment.create({
+        paymentMode: paymentMethod, amount: netBill,
+        paymentStatus: paymentMode === "COD" ? "processing" : "confirmed",
+        refundStatus: paymentMode === "COD" ? "not_required" : "pending",
+        orderId: new mongoose.Types.ObjectId(),
+      });
+
+      const order = await Order.create({
+        userId, items: sanitizedItems, shippingAddress,
+        netBill,
+        paymentMode,
+        paymentId: newPayment._id,
+        orderStatus: "pending",
+        refundStatus: paymentMode === "COD" ? "not_required" : "pending",
+      });
+
+      newPayment.orderId = order._id;
+      await newPayment.save();
+
+      res.status(201).json({ message: "Order placed successfully", order });
+    } catch (orderErr) {
+      await restoreProductStock(deductedItems);
+      throw orderErr;
+    }
   } catch (err) {
     console.error("Order Error:", err);
-    res.status(500).json({ message: "Server error during order placement" });
+    res.status(500).json({ message: err});
   }
 };
 
@@ -308,7 +370,7 @@ export const getMyOrders = async (req, res) => {
 /** CUSTOMER: Get single order */
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findOne({ _id: req.params.id, userId: req.user.id });
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user.id }).populate("paymentId");
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.status(200).json({ order });
   } catch { res.status(500).json({ message: "Server error" }); }
@@ -322,6 +384,17 @@ export const cancelOrder = async (req, res) => {
     if (order.orderStatus !== "pending")
       return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
     order.orderStatus = "cancelled";
+    await restoreProductStock(order.items.map((item) => ({
+      productId: item.productId,
+      units: normalizeUnits(item.units || 0),
+    })));
+    if (order.paymentMode === "COD") {
+      order.refundStatus = "not_required";
+      order.refundNote = "No refund required for Cash on Delivery orders.";
+    } else {
+      order.refundStatus = "pending";
+      order.refundNote = "";
+    }
     await order.save();
     res.status(200).json({ message: "Order cancelled successfully", order });
   } catch { res.status(500).json({ message: "Server error" }); }
@@ -330,7 +403,10 @@ export const cancelOrder = async (req, res) => {
 /** ADMIN: Get all orders */
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("userId", "name email").sort({ createdAt: -1 });
+    const orders = await Order.find()
+      .populate("userId", "name email")
+      .populate("paymentId")
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: orders.length, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error: Unable to retrieve orders." });
@@ -354,17 +430,30 @@ export const getOrdersByUserId = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminNote } = req.body;
+    const { status, adminNote, refundNote } = req.body;
     const validStatuses = ["pending", "arriving", "delivered", "cancelled"];
     if (status && !validStatuses.includes(status))
       return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+    const existingOrder = await Order.findById(id);
+    if (!existingOrder) return res.status(404).json({ success: false, message: "Order not found." });
+
     const updateFields = {};
     if (status)                  updateFields.orderStatus = status;
     if (adminNote !== undefined) updateFields.adminNote   = adminNote;
+    if (refundNote !== undefined) updateFields.refundNote = refundNote;
+    if (status === "cancelled" && updateFields.refundNote === undefined) {
+      updateFields.refundStatus = "pending";
+    }
     if (!Object.keys(updateFields).length)
       return res.status(400).json({ success: false, message: "No fields to update." });
+    if (status === "cancelled" && existingOrder.orderStatus !== "cancelled") {
+      await restoreProductStock(existingOrder.items.map((item) => ({
+        productId: item.productId,
+        units: normalizeUnits(item.units || 0),
+      })));
+    }
+
     const updatedOrder = await Order.findByIdAndUpdate(id, updateFields, { new: true, runValidators: true });
-    if (!updatedOrder) return res.status(404).json({ success: false, message: "Order not found." });
     res.status(200).json({ success: true, message: status ? `Order status updated to ${status}` : "Order updated.", order: updatedOrder });
   } catch (err) {
     console.log(err);
@@ -784,6 +873,73 @@ export const getCategoryReport = async (req, res) => {
   } catch (err) {
     console.error("[CATEGORY_REPORT_ERROR]:", err.message);
     res.status(500).json({ success: false, message: "Failed to generate category report." });
+  }
+};
+
+/** ADMIN: Get cancelled orders awaiting refund action */
+export const getRefundQueue = async (_req, res) => {
+  try {
+    const orders = await Order.find({ orderStatus: "cancelled" })
+      .populate("userId", "userName email")
+      .populate("paymentId")
+      .sort({ updatedAt: -1, createdAt: -1 });
+
+    res.status(200).json({ success: true, count: orders.length, orders });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to load refund queue." });
+  }
+};
+
+/** ADMIN: Initiate refund for a cancelled order */
+export const initiateRefund = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { note = "" } = req.body;
+
+    const order = await Order.findById(id).populate("paymentId");
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    if (order.orderStatus !== "cancelled") {
+      return res.status(400).json({ success: false, message: "Only cancelled orders can be refunded." });
+    }
+
+    if (order.paymentMode === "COD") {
+      order.refundStatus = "not_required";
+      order.refundNote = note || "No refund required for Cash on Delivery orders.";
+      await order.save();
+      return res.status(200).json({
+        success: true,
+        message: "This order does not require a refund.",
+        order,
+      });
+    }
+
+    if (!order.paymentId) {
+      return res.status(400).json({ success: false, message: "No payment record found for this order." });
+    }
+
+    order.refundStatus = "initiated";
+    order.refundInitiatedAt = new Date();
+    order.refundNote = note;
+    await order.save();
+
+    await Payment.findByIdAndUpdate(order.paymentId._id, {
+      refundStatus: "initiated",
+      refundInitiatedAt: order.refundInitiatedAt,
+      paymentStatus: "refunded",
+    });
+
+    const updatedOrder = await Order.findById(id).populate("paymentId").populate("userId", "userName email");
+
+    res.status(200).json({
+      success: true,
+      message: "Refund initiated successfully.",
+      order: updatedOrder,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || "Failed to initiate refund." });
   }
 };
 

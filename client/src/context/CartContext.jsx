@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
+import { BOX_QUANTITY, clampToBoxQuantity } from "../utils/quantity";
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
@@ -57,10 +58,15 @@ export const CartProvider = ({ children }) => {
       toast.error("Please sign in to add items to your cart.");
       return;
     }
+    const normalizedQuantity = clampToBoxQuantity(quantity, product?.stock);
+    if (normalizedQuantity < BOX_QUANTITY) {
+      toast.error(`Minimum order quantity is ${BOX_QUANTITY} units.`);
+      return;
+    }
     try {
       const res = await axios.post(
         `${API_BASE_URL}/add`,
-        { productId: product._id, quantity },
+        { productId: product._id, quantity: normalizedQuantity },
         getAuthHeaders()
       );
       setCartItems(formatCartItems(res.data.items));
@@ -99,11 +105,13 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = async (productId, quantity) => {
-    if (quantity < 1) { removeFromCart(productId); return; }
+    const currentItem = cartItems.find((item) => item._id === productId);
+    const normalizedQuantity = clampToBoxQuantity(quantity, currentItem?.productId?.stock);
+    if (normalizedQuantity < BOX_QUANTITY) { removeFromCart(productId); return; }
     try {
       const res = await axios.put(
         `${API_BASE_URL}/update`,
-        { productId, quantity },
+        { productId, quantity: normalizedQuantity },
         getAuthHeaders()
       );
       setCartItems(formatCartItems(res.data.items));

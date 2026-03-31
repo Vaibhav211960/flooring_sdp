@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import {
   User, Mail, Lock, UserPlus, ChevronRight,
   Home as HomeIcon, Eye, EyeOff, Loader2,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -79,7 +79,7 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/users/signup", {
+      await api.post("/users/signup", {
         name:     formData.name,
         email:    formData.email,
         password: formData.password,
@@ -334,3 +334,4 @@ function FieldMsg({ touched, error, hasValue }) {
   );
   return null;
 }
+

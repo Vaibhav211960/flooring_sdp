@@ -1,5 +1,6 @@
 import { Minus, Plus, X } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { BOX_QUANTITY } from "../utils/quantity";
 
 const CartItem = ({ item }) => {
   const { updateQuantity, removeFromCart } = useCart();
@@ -33,8 +34,8 @@ const CartItem = ({ item }) => {
       <div className="md:col-span-3 flex justify-center">
         <div className="flex items-center bg-stone-50 border border-stone-200 rounded-xl overflow-hidden">
           <button
-            onClick={() => updateQuantity(item._id, item.quantity - 1)}
-            disabled={item.quantity <= 10}
+            onClick={() => updateQuantity(item._id, item.quantity - BOX_QUANTITY)}
+            disabled={item.quantity <= BOX_QUANTITY}
             className="p-2.5 hover:bg-white text-stone-500 disabled:opacity-30 transition-colors"
           >
             <Minus size={13} />
@@ -43,7 +44,8 @@ const CartItem = ({ item }) => {
             {item.quantity}
           </span>
           <button
-            onClick={() => updateQuantity(item._id, item.quantity + 1)}
+            onClick={() => updateQuantity(item._id, item.quantity + BOX_QUANTITY)}
+            disabled={item.productId?.stock ? item.quantity + BOX_QUANTITY > item.productId.stock : false}
             className="p-2.5 hover:bg-white text-stone-500 transition-colors"
           >
             <Plus size={13} />

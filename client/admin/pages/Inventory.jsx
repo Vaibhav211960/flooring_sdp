@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../../src/utils/adminApi";
 import { useNavigate } from "react-router-dom";
 import {
   Package, Search, Loader2, AlertTriangle,
   CheckCircle2, Save, RotateCcw, ArrowLeft,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 
-// ── Same shared axios instance ──
-const api = axios.create({ baseURL: "http://localhost:5000/api" });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 const LOW_STOCK_THRESHOLD = 200;
 
@@ -375,3 +368,4 @@ const Inventory = ({ onNavigate }) => {
 };
 
 export default Inventory;
+

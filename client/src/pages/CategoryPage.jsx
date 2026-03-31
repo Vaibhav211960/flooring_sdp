@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { CategoryCard } from "../components/CategoryCard.jsx";
 import api from "../utils/api";
+import { toast } from "../utils/toast";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
@@ -22,8 +23,10 @@ export default function CategoryPage() {
       setError(null);
       const res = await api.get("/subcategories");
       setSubcategories(res.data.subCategories || []);
-    } catch {
-      setError("Failed to load collections. Please try again.");
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to load collections. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

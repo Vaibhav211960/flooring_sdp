@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   CheckCircle2, Package, Truck, 
-  Home, ShoppingBag, MapPin, User, Volume2, VolumeX, Download
+  Home, ShoppingBag, MapPin, User, Volume2, VolumeX, Download, Loader2
 } from "lucide-react";
 import { Button } from "../ui/button";
 import Navbar from "../components/Navbar";
@@ -10,20 +10,50 @@ import Footer from "../components/Footer";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useCart } from "../context/CartContext";
+import { toast } from "../utils/toast";
 
 export default function OrderSuccess() {
   const location  = useLocation();
   const navigate  = useNavigate();
   const { clearCart, cartItems } = useCart();
 
-  const { order } = location.state || {};
+  const { order, redirectTo, redirectDelay = 10 } = location.state || {};
   const [isSpeaking,    setIsSpeaking]    = useState(false);
   const [isGenerating,  setIsGenerating]  = useState(false);
+  const [secondsLeft,   setSecondsLeft]   = useState(redirectDelay);
 
   // ── Redirect if no order in state ─────────────────────────────────────────
   useEffect(() => {
-    if (!order) navigate("/");
+    if (!order) {
+      toast.error("Order details not found.");
+      navigate("/");
+    }
   }, [order, navigate]);
+
+  useEffect(() => {
+    if (!order || !redirectTo) return;
+
+    toast.success(`Redirecting to your order details in ${redirectDelay} seconds.`);
+
+    const countdown = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const timer = setTimeout(() => {
+      navigate(redirectTo, { replace: true });
+    }, redirectDelay * 1000);
+
+    return () => {
+      clearInterval(countdown);
+      clearTimeout(timer);
+    };
+  }, [order, redirectDelay, redirectTo, navigate]);
 
   // ── SAFETY NET: clear cart when this page mounts ──────────────────────────
   // Payment.jsx already calls clearCart() before navigating here, but if it
@@ -236,6 +266,13 @@ export default function OrderSuccess() {
               </div>
 
               <div className="flex flex-col gap-3">
+                {redirectTo && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">
+                      Opening order details in {secondsLeft}s
+                    </p>
+                  </div>
+                )}
                 <Button
                   onClick={generateInvoice}
                   disabled={isGenerating}
@@ -245,6 +282,14 @@ export default function OrderSuccess() {
                   {isGenerating ? "Preparing PDF..." : "Download Digital Invoice"}
                 </Button>
                 <div className="grid grid-cols-2 gap-3">
+                  {redirectTo && (
+                    <Button
+                      onClick={() => navigate(redirectTo)}
+                      className="bg-stone-100 hover:bg-stone-200 text-stone-900 h-12 rounded-xl font-bold uppercase tracking-widest text-[9px]"
+                    >
+                      View Order
+                    </Button>
+                  )}
                   <Button
                     onClick={() => window.print()}
                     className="bg-stone-100 hover:bg-stone-200 text-stone-900 h-12 rounded-xl font-bold uppercase tracking-widest text-[9px]"

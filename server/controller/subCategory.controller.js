@@ -54,12 +54,9 @@ export const getSubCategoriesByCategory = async (req, res) => {
  * ADMIN: Create subcategory
  */
 export const createSubCategory = async (req, res) => {
-  console.log(req.body);
   try {
-
-    const { categoryId, name, description, image , status } = req.body;
-
-    const isActive = status === "active" ? true : false;
+    const { categoryId, name, description, image, status, isActive } = req.body;
+    const resolvedActive = typeof isActive === "boolean" ? isActive : status !== "inactive";
 
     if (!categoryId || !name || !description || !image) {
       return res.status(400).json({ message: "All fields are required" });
@@ -87,7 +84,7 @@ export const createSubCategory = async (req, res) => {
       name,
       description,
       image,
-      isActive,
+      isActive: resolvedActive,
     });
 
     await subCategory.save();
@@ -106,15 +103,20 @@ export const createSubCategory = async (req, res) => {
  */
 export const updateSubCategory = async (req, res) => {
   try {
-    const { name, description, image, status } = req.body;
+    const { categoryId, name, description, image, status, isActive } = req.body;
+    const updateData = {};
 
-    const isActive = status === "active" ? true : false;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (image !== undefined) updateData.image = image;
+    if (typeof isActive === "boolean") updateData.isActive = isActive;
+    else if (status !== undefined) updateData.isActive = status !== "inactive";
 
-    const subCategory = await SubCategory.findByIdAndUpdate(
-      req.params.id,
-      { name, description, image, isActive },
-      { new: true }
-    );
+    const subCategory = await SubCategory.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!subCategory) {
       return res.status(404).json({ message: "SubCategory not found" });

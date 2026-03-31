@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "../../src/utils/toast";
 import {
   FileSpreadsheet,
   Download,
@@ -542,3 +542,4 @@ const Reports = () => {
 };
 
 export default Reports;
+

@@ -1,39 +1,36 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import { ChevronRight, Truck, ShieldCheck, Package, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InputField from "../components/InputField";
-// FIX: VALIDATORS, validateAll, hasErrors were completely duplicated from BuyAll
-// Now imported from shared utils — any rule change fixes both pages at once
 import { SHIPPING_VALIDATORS, validateAll, hasErrors, getVisibleErrors } from "../utils/validators";
 import api from "../utils/api";
 import { getDiscountData, getDeliveryCharge } from "./Cart";
+import { BOX_QUANTITY, incrementByBox, decrementByBox, clampToBoxQuantity } from "../utils/quantity";
 
 export default function BuyNow() {
-  const { id }    = useParams();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const initialQty = location.state?.quantity || 1;
+  const initialQty = clampToBoxQuantity(location.state?.quantity || BOX_QUANTITY);
 
-  const [product,        setProduct]        = useState(null);
-  const [isLoading,      setIsLoading]      = useState(true);
+  const [product, setProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [units,          setUnits]          = useState(initialQty);
-  const [touched,        setTouched]        = useState({});
+  const [units, setUnits] = useState(initialQty);
+  const [touched, setTouched] = useState({});
 
   const [form, setForm] = useState({
     fullName: "", contact: "", pincode: "", landmark: "", address: "",
   });
 
-  // useMemo: only recomputes when form changes
-  const allErrors     = useMemo(() => validateAll(form, SHIPPING_VALIDATORS), [form]);
+  const allErrors = useMemo(() => validateAll(form, SHIPPING_VALIDATORS), [form]);
   const visibleErrors = useMemo(() => getVisibleErrors(allErrors, touched), [allErrors, touched]);
-  const formIsValid   = !hasErrors(allErrors);
+  const formIsValid = !hasErrors(allErrors);
 
-  // useCallback: stable fetch
   const fetchProduct = useCallback(async () => {
     try {
       const res = await api.get(`/products/${id}`);
@@ -46,23 +43,34 @@ export default function BuyNow() {
     }
   }, [id, navigate]);
 
-  useEffect(() => { fetchProduct(); }, [fetchProduct]);
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
 
-  // ── Financials — all in one useMemo ──────────────────────────────────────
+  useEffect(() => {
+    if (!product) return;
+    setUnits((currentUnits) => {
+      const normalizedUnits = clampToBoxQuantity(currentUnits, product.stock);
+      return normalizedUnits || BOX_QUANTITY;
+    });
+  }, [product]);
+
   const financialData = useMemo(() => {
     const subtotal = (product?.price || 0) * units;
     const discount = getDiscountData(subtotal);
     const delivery = getDeliveryCharge(units);
-    const netBill  = subtotal - discount.amt + delivery;
+    const netBill = subtotal - discount.amt + delivery;
     const nextTierAmount = subtotal < 5000 ? 5000 - subtotal : subtotal < 10000 ? 10000 - subtotal : 0;
     return {
-      subtotal, delivery, netBill, nextTierAmount,
-      discount:            discount.amt,
-      discountPercentage:  discount.p,
+      subtotal,
+      delivery,
+      netBill,
+      nextTierAmount,
+      discount: discount.amt,
+      discountPercentage: discount.p,
     };
   }, [units, product]);
 
-  // ── Form handlers — all useCallback ─────────────────────────────────────
   const handleInput = useCallback((e) => {
     const { name, value } = e.target;
     let formatted = value;
@@ -92,18 +100,17 @@ export default function BuyNow() {
 
     const checkoutData = {
       items: [{
-        productId:    product._id,
-        productName:  product.name,
+        productId: product._id,
+        productName: product.name,
         pricePerUnit: product.price,
         units,
-        totalAmount:  financialData.subtotal,
+        totalAmount: financialData.subtotal,
       }],
       form,
-      netBill:        financialData.netBill,
+      netBill: financialData.netBill,
       isCartCheckout: false,
     };
 
-    // Always clear ALL stale checkout keys first
     localStorage.removeItem("checkout_details");
     localStorage.removeItem("checkout_products");
     localStorage.removeItem("temp_shipping_address");
@@ -115,11 +122,13 @@ export default function BuyNow() {
     setIsPlacingOrder(false);
   }, [allErrors, form, product, units, financialData, navigate]);
 
-  if (isLoading) return (
-    <div className="h-screen flex items-center justify-center bg-stone-50">
-      <Loader2 className="animate-spin text-amber-600 h-8 w-8" />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-stone-50">
+        <Loader2 className="animate-spin text-amber-600 h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900">
@@ -143,10 +152,7 @@ export default function BuyNow() {
 
       <main className="flex-grow py-12 md:py-16">
         <div className="container max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-10">
-
           <div className="lg:col-span-8 space-y-6">
-
-            {/* Shipping Form */}
             <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -179,7 +185,7 @@ export default function BuyNow() {
                   placeholder="6-digit postal code" maxLength={6} inputMode="numeric" />
                 <InputField label="Landmark (Optional)" name="landmark" value={form.landmark}
                   onChange={handleInput} onBlur={handleBlur}
-                  placeholder="Near school, temple…" isOptional />
+                  placeholder="Near school, temple..." isOptional />
 
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
@@ -193,7 +199,7 @@ export default function BuyNow() {
                         : touched.address && !allErrors.address ? "border-emerald-400 ring-2 ring-emerald-50"
                         : "border-stone-200 bg-stone-50 focus:border-amber-500"
                       }`}
-                      placeholder="House/Flat no., Street, Area, City, State…" />
+                      placeholder="House/Flat no., Street, Area, City, State..." />
                     <span className="absolute bottom-3 right-3 text-[9px] text-stone-400 font-bold">{form.address.length}/300</span>
                   </div>
                   {visibleErrors.address
@@ -205,7 +211,6 @@ export default function BuyNow() {
               </div>
             </div>
 
-            {/* Product Row */}
             <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-stone-100">
                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-700">Your Order</p>
@@ -218,11 +223,14 @@ export default function BuyNow() {
                     {product.woodType && `${product.woodType} · `}{product.thicknessMM}mm
                   </p>
                   <div className="mt-3 flex items-center border border-stone-200 w-fit rounded-xl overflow-hidden">
-                    <button onClick={() => setUnits((u) => Math.max(1, u - 1))} className="px-4 py-2 hover:bg-stone-50 text-stone-700 font-bold transition-colors">−</button>
+                    <button onClick={() => setUnits((u) => decrementByBox(u))} className="px-4 py-2 hover:bg-stone-50 text-stone-700 font-bold transition-colors">-</button>
                     <span className="px-4 py-2 font-mono font-bold text-sm border-x border-stone-200 min-w-[2.5rem] text-center">{units}</span>
-                    <button onClick={() => setUnits((u) => u + 1)} disabled={product.stock && units >= product.stock}
+                    <button onClick={() => setUnits((u) => incrementByBox(u, product.stock))} disabled={product.stock && units + BOX_QUANTITY > product.stock}
                       className="px-4 py-2 hover:bg-stone-50 text-stone-700 font-bold transition-colors disabled:opacity-30">+</button>
                   </div>
+                  <p className="mt-2 text-[10px] text-stone-400 uppercase tracking-widest">
+                    1 box = {BOX_QUANTITY} units
+                  </p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xl font-mono font-bold text-stone-900">₹{product.price.toLocaleString()}</p>
@@ -232,7 +240,6 @@ export default function BuyNow() {
             </div>
           </div>
 
-          {/* Summary */}
           <div className="lg:col-span-4">
             <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sticky top-28">
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-700 mb-5 pb-4 border-b border-stone-100">Financial Summary</p>
@@ -244,7 +251,7 @@ export default function BuyNow() {
                 {financialData.discount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-semibold">
                     <span>Discount ({financialData.discountPercentage}%)</span>
-                    <span className="font-mono">−₹{Math.round(financialData.discount).toLocaleString()}</span>
+                    <span className="font-mono">-₹{Math.round(financialData.discount).toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-stone-600">

@@ -18,10 +18,11 @@
 // ── Shipping address validators ──────────────────────────────────────────────
 export const SHIPPING_VALIDATORS = {
   fullName: (v) => {
-    if (!v?.trim()) return "Full name is required";
-    if (v.trim().length < 3) return "Name must be at least 3 characters";
-    if (v.trim().length > 60) return "Name must be under 60 characters";
-    if (!/^[a-zA-Z\s.'-]+$/.test(v.trim())) return "Name must contain only letters";
+    const s = String(v ?? "").trim();
+    if (!s) return "Full name is required";
+    if (s.length < 3) return "Name must be at least 3 characters";
+    if (s.length > 60) return "Name must be under 60 characters";
+    if (!/^[a-zA-Z\s.'-]+$/.test(s)) return "Name must contain only letters";
     return "";
   },
   contact: (v) => {
@@ -31,16 +32,18 @@ export const SHIPPING_VALIDATORS = {
     return "";
   },
   pincode: (v) => {
-    if (!v?.trim()) return "Pincode is required";
-    if (!/^\d{6}$/.test(v.trim())) return "Enter a valid 6-digit pincode";
-    if (/^0{6}$/.test(v.trim())) return "Enter a valid pincode";
+    const s = String(v ?? "").trim();
+    if (!s) return "Pincode is required";
+    if (!/^\d{6}$/.test(s)) return "Enter a valid 6-digit pincode";
+    if (/^0{6}$/.test(s)) return "Enter a valid pincode";
     return "";
   },
   landmark: () => "",  // always optional
   address: (v) => {
-    if (!v?.trim()) return "Delivery address is required";
-    if (v.trim().length < 15) return "Please enter a more complete address (min 15 chars)";
-    if (v.trim().length > 300) return "Address is too long (max 300 chars)";
+    const s = String(v ?? "").trim();
+    if (!s) return "Delivery address is required";
+    if (s.length < 15) return "Please enter a more complete address (min 15 chars)";
+    if (s.length > 300) return "Address is too long (max 300 chars)";
     return "";
   },
 };

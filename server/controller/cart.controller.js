@@ -1,10 +1,18 @@
 import Cart from "../model/cart.model.js";
 import Product from "../model/product.model.js";
 
+const BOX_QUANTITY = 10;
+
+const normalizeBoxQuantity = (value) => {
+  const quantity = Number(value);
+  if (!Number.isFinite(quantity)) return NaN;
+  return Math.trunc(quantity);
+};
+
 // Helper to get populated cart
 const getPopulatedCart = async (userId) => {
   return await Cart.findOne({ userId })
-    .populate("items.productId", "name image price");
+    .populate("items.productId", "name image price unit stock");
 };
 
 /**
@@ -16,7 +24,7 @@ export const getMyCart = async (req, res) => {
     // 2. Correct: Use findOne because we are looking for the 'userId' field
     // 3. Optional: Added populate so you get product details, not just IDs
     const cart = await Cart.findOne({ userId: req.user.id })
-      .populate("items.productId", "productName productImg");
+      .populate("items.productId", "name image price unit stock");
 
     if (!cart) {
       // If no cart exists yet, return an empty structure instead of an error
@@ -37,9 +45,13 @@ export const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
+    const requestedQuantity = normalizeBoxQuantity(quantity);
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
+    if (requestedQuantity < BOX_QUANTITY || requestedQuantity % BOX_QUANTITY !== 0) {
+      return res.status(400).json({ message: `Quantity must be added in boxes of ${BOX_QUANTITY}.` });
+    }
 
     const price = product.salePrice || product.price;
 
@@ -51,10 +63,17 @@ export const addToCart = async (req, res) => {
     const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
 
     if (itemIndex > -1) {
-      cart.items[itemIndex].quantity += quantity;
+      const nextQuantity = cart.items[itemIndex].quantity + requestedQuantity;
+      if (nextQuantity > product.stock) {
+        return res.status(400).json({ message: "Requested quantity exceeds available stock." });
+      }
+      cart.items[itemIndex].quantity = nextQuantity;
       cart.items[itemIndex].total = cart.items[itemIndex].quantity * price;
     } else {
-      cart.items.push({ productId, quantity, price, total: price * quantity });
+      if (requestedQuantity > product.stock) {
+        return res.status(400).json({ message: "Requested quantity exceeds available stock." });
+      }
+      cart.items.push({ productId, quantity: requestedQuantity, price, total: price * requestedQuantity });
     }
 
     cart.cartTotal = cart.items.reduce((acc, item) => acc + item.total, 0);
@@ -74,14 +93,23 @@ export const updateCartItem = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
+    const requestedQuantity = normalizeBoxQuantity(quantity);
 
     const cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (requestedQuantity < BOX_QUANTITY || requestedQuantity % BOX_QUANTITY !== 0) {
+      return res.status(400).json({ message: `Quantity must be updated in boxes of ${BOX_QUANTITY}.` });
+    }
+    if (requestedQuantity > product.stock) {
+      return res.status(400).json({ message: "Requested quantity exceeds available stock." });
+    }
 
     const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
 
     if (itemIndex > -1) {
-      cart.items[itemIndex].quantity = quantity;
+      cart.items[itemIndex].quantity = requestedQuantity;
       cart.items[itemIndex].total = cart.items[itemIndex].quantity * cart.items[itemIndex].price;
       
       cart.cartTotal = cart.items.reduce((acc, item) => acc + item.total, 0);

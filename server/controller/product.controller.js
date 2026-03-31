@@ -128,10 +128,11 @@ export const createProduct = async (req, res) => {
       waterResistance, // New
       subCategoryId,
       status,
+      isActive,
     } = req.body;
 
     // Determine active status based on admin input
-    const isActive = status === 'inactive' ? false : true;
+    const resolvedActive = typeof isActive === "boolean" ? isActive : status !== "inactive";
 
     // 2. Strict Validation for REQUIRED fields
     // Note: Checking !== undefined for numbers allows stock/price to be 0
@@ -167,7 +168,7 @@ export const createProduct = async (req, res) => {
       name,
       sku,
       description,
-      image,
+      image: Array.isArray(image) ? image : [image],
       price,
       pricePerBox,
       unit: unit || 'sqft', // Fallback to default if not provided
@@ -182,7 +183,7 @@ export const createProduct = async (req, res) => {
       widthMM,
       waterResistance: waterResistance || 'Not-resistant',
       subCategoryId,
-      isActive,
+      isActive: resolvedActive,
     });
 
     res.status(201).json({
@@ -209,9 +210,15 @@ export const updateProduct = async (req, res) => {
     delete updateData.sku;
 
     // 2. Handle the Active/Inactive toggle
-    if (updateData.status !== undefined) {
+    if (typeof updateData.isActive === "boolean") {
+      updateData.isActive = updateData.isActive;
+    } else if (updateData.status !== undefined) {
       updateData.isActive = updateData.status !== 'inactive';
-      delete updateData.status; // Remove this so it doesn't mess with the DB schema
+    }
+    delete updateData.status;
+
+    if (updateData.image && !Array.isArray(updateData.image)) {
+      updateData.image = [updateData.image];
     }
 
     // 3. Update the rest of the fields

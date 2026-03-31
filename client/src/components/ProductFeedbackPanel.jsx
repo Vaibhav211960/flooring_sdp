@@ -18,7 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "../utils/toast";
 import {
   Star, Send, Lock, Loader2, MessageSquare,
   CheckCircle2, Pencil, Trash2, X, Check,
