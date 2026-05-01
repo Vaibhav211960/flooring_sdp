@@ -116,19 +116,7 @@ const AdminLogin = () => {
           </form>
 
           {/* Redirector for Customers */}
-          <div className="pt-8 border-t border-stone-200 flex flex-col items-center gap-4">
-            <p className="text-xs text-stone-400 font-medium">
-              Not a studio administrator?
-            </p>
-            <a
-              href="/login"
-              className="group flex items-center gap-2 px-6 py-2 border border-stone-200 rounded-full text-[10px] font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-100 transition-all"
-            >
-              <UserCircle size={14} className="group-hover:text-amber-600" />
-              Switch to Customer Portal
-            </a>
-          </div>
-        </div>
+         </div>
       </div>
     </div>
   );

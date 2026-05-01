@@ -113,7 +113,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-5">
               {/* Email */}
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">Email Address</label>
@@ -138,6 +138,7 @@ export default function Login() {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
+                    autoComplete="current-password"
                     onChange={(e) => { setPassword(e.target.value); setError(""); }}
                     className="w-full pl-10 pr-12 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:border-amber-500 focus:outline-none transition-all"
                     required
@@ -166,13 +167,13 @@ export default function Login() {
 
               {/* Submit */}
               <button
-                onClick={handleLogin}
+                type="submit"
                 disabled={isLoading}
                 className="w-full h-12 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
               </button>
-            </div>
+            </form>
           </div>
 
           <div className="bg-stone-50 px-8 py-5 border-t border-stone-100 text-center">

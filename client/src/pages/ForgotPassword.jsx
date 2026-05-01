@@ -19,6 +19,8 @@ export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [previewResetLink, setPreviewResetLink] = useState("");
+  const [responseMessage, setResponseMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,11 +35,16 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
     setError("");
+    setPreviewResetLink("");
+    setResponseMessage("");
 
     try {
-      await api.post("/users/forgot-password", { email });
+      const res = await api.post("/auth/forgot-password", { email });
+      const message = res.data?.message || "Reset link sent to email.";
       setIsSubmitted(true);
-      toast.success("Password reset email sent.");
+      setPreviewResetLink(res.data?.previewResetLink || "");
+      setResponseMessage(message);
+      toast.success(message);
     } catch (err) {
       const message = err.response?.data?.message || "Failed to send reset email.";
       setError(message);
@@ -98,7 +105,10 @@ export default function ForgotPassword() {
                   </p>
                 </div>
 
-                <div className="space-y-5">
+                {/* FIX 3: Wrapped inputs in a <form> tag with onSubmit.
+                    Previously the button used onClick only, so pressing
+                    Enter in the email field did nothing. */}
+                <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Email Field */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
@@ -126,7 +136,7 @@ export default function ForgotPassword() {
                   </div>
 
                   <button
-                    onClick={handleSubmit}
+                    type="submit"
                     disabled={isLoading}
                     className="w-full h-12 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 group"
                   >
@@ -142,7 +152,7 @@ export default function ForgotPassword() {
                       </>
                     )}
                   </button>
-                </div>
+                </form>
               </>
             ) : (
               /* ── Success State ── */
@@ -154,14 +164,39 @@ export default function ForgotPassword() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="font-serif text-2xl font-bold text-stone-900">
-                    Email Sent
+                    {previewResetLink ? "Reset Link Ready" : "Email Sent"}
                   </h2>
                   <p className="text-stone-500 text-sm leading-relaxed">
-                    If an account exists for{" "}
-                    <span className="font-bold text-stone-900">{email}</span>,
-                    you will receive a password reset link shortly.
+                    {previewResetLink ? (
+                      <>
+                        A local reset link is ready for{" "}
+                        <span className="font-bold text-stone-900">{email}</span>.
+                      </>
+                    ) : (
+                      <>
+                        If an account exists for{" "}
+                        <span className="font-bold text-stone-900">{email}</span>,
+                        you will receive a password reset link shortly.
+                      </>
+                    )}
                   </p>
                 </div>
+                {previewResetLink && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                      Local Development Link
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-stone-600">
+                      {responseMessage || "Email could not be delivered from the local server, so this preview link lets you continue testing the reset flow locally."}
+                    </p>
+                    <a
+                      href={previewResetLink}
+                      className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-stone-900 px-5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-stone-800"
+                    >
+                      Open Reset Link
+                    </a>
+                  </div>
+                )}
                 <Link
                   to="/login"
                   className="block w-full h-12 border border-stone-200 rounded-xl font-bold uppercase tracking-widest text-[11px] text-stone-600 hover:bg-stone-50 transition-all flex items-center justify-center"

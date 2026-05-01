@@ -9,31 +9,12 @@ import { Button } from "../ui/button.jsx";
 import heroImage from "../assets/elegant_living_room_with_hardwood_flooring.png";
 import api from "../utils/api";
 
-const REVIEWS = [
-  {
-    id: 1,
-    name: "Emily R.",
-    rating: 5,
-    text: "Inscape transformed our home! The quality is unmatched and the process was seamless. Highly recommend for anyone looking to upgrade their flooring.",
-  },
-  {
-    id: 2,
-    name: "Michael S.",
-    rating: 4,
-    text: "Great value for the price. The flooring looks fantastic and has held up well with our kids and pets. Customer service was responsive when we had questions.",
-  },
-  {
-    id: 3,
-    name: "Sophia L.",
-    rating: 5,
-    text: "I was blown away by the durability and beauty of the floors. They have a real premium feel without the premium price. Will definitely be using Inscape for future projects!",
-  },
-];
-
 export default function Home() {
   // FIX: categories now fetched from API, not hardcoded mock data
   const [categories,   setCategories]   = useState([]);
   const [isCatLoading, setIsCatLoading] = useState(true);
+  const [reviews,      setReviews]      = useState([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(true);
 
   // useCallback: stable reference — won't be recreated on every render
   const fetchCategories = useCallback(async () => {
@@ -41,7 +22,7 @@ export default function Home() {
       setIsCatLoading(true);
       // Fetch subcategories to show as collections (same as CategoryPage)
       const res = await api.get("/subcategories");
-      setCategories(res.data.subCategories || []);
+      setCategories((res.data.subCategories || []).filter((item) => item.isActive !== false));
     } catch {
       // Silent fail — homepage still renders, just without live categories
     } finally {
@@ -50,6 +31,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      setIsReviewsLoading(true);
+      const res = await api.get("/feedback/featured?limit=3");
+      setReviews(res.data.feedbacks || []);
+    } catch {
+      setReviews([]);
+    } finally {
+      setIsReviewsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
   const scrollToCategories = (e) => {
     e.preventDefault();
@@ -168,29 +163,53 @@ export default function Home() {
             <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-amber-700 mb-2">Customer Reviews</p>
             <h2 className="font-serif text-3xl font-semibold text-stone-900">Trusted by Homeowners</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {REVIEWS.map((review) => (
-              <div
-                key={review.id}
-                className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between h-full"
-              >
-                <div>
-                  <div className="flex gap-1 mb-4">
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-500 text-amber-500" />
-                    ))}
+          {isReviewsLoading ? (
+            <div className="flex items-center justify-center py-16 gap-3">
+              <Loader2 className="h-6 w-6 text-amber-600 animate-spin" />
+              <span className="text-stone-400 text-sm italic tracking-widest">Loading reviews...</span>
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {reviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between h-full"
+                >
+                  <div>
+                    <div className="flex gap-1 mb-4">
+                      {Array.from({ length: review.rating || 0 }).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-amber-500 text-amber-500" />
+                      ))}
+                    </div>
+                    <p className="text-stone-600 mb-6 text-sm leading-relaxed italic">
+                      "{review.comment || "Verified customer feedback from a recent flooring order."}"
+                    </p>
                   </div>
-                  <p className="text-stone-600 mb-6 text-sm leading-relaxed italic">"{review.text}"</p>
+                  <div className="flex items-center justify-between border-t border-stone-100 pt-4 gap-4">
+                    <div>
+                      <span className="font-semibold text-stone-900 text-sm block">
+                        {review.userId?.userName || "Verified Customer"}
+                      </span>
+                      {review.productId?.name && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 block mt-1">
+                          {review.productId.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full whitespace-nowrap">
+                      Verified Buyer
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-                  <span className="font-semibold text-stone-900 text-sm">{review.name}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
-                    Verified Buyer
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-2xl border border-stone-200 shadow-sm">
+              <p className="text-stone-500 text-sm leading-relaxed max-w-lg mx-auto">
+                Approved customer reviews will appear here as soon as feedback is published from delivered orders.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

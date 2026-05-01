@@ -51,7 +51,11 @@ export default function ProductDetails() {
     try {
       setIsLoading(true);
       const res = await api.get(`/products/${id}`);
-      setProduct(res.data.product || res.data);
+      const fetchedProduct = res.data.product || res.data;
+      if (!fetchedProduct || fetchedProduct.isActive === false) {
+        throw new Error("Product not found.");
+      }
+      setProduct(fetchedProduct);
     } catch {
       setError("Product not found.");
     } finally {
@@ -503,7 +507,7 @@ export default function ProductDetails() {
                   product={product}
                   qty={qty}
                   disabled={product.stock < BOX_QUANTITY || !product.isActive}
-                  className="h-14 text-[10px] font-bold uppercase tracking-widest rounded-xl bg-white border border-stone-200 text-stone-900 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm"
+                  className="h-14 text-[10px] font-bold uppercase tracking-widest rounded-xl bg-black border border-stone-200 text-stone-900 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm"
                 />
               </div>
 

@@ -3,7 +3,7 @@ import api from "../../src/utils/adminApi";
 import { useNavigate } from "react-router-dom";
 import {
   ImageIcon, IndianRupee, Package,
-  Plus, Droplets, Trash2, Edit3, Search, Loader2, X, ToggleLeft, ToggleRight
+  Plus, Droplets, Edit3, Search, Loader2, X, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { toast } from "../../src/utils/toast";
 
@@ -100,40 +100,7 @@ const Products = () => {
     }
   }, []);
 
-  const deleteProduct = useCallback((id, name) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-stone-800">Disable <strong>{name}</strong>?</p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await api.delete(`/products/${id}`);
-                  // ── Optimistic delete: remove from local state, no refetch needed ──
-                  // OLD: called fetchProducts() after delete = full server round trip
-                  // NEW: just filter it out locally — server already deleted it
-                  setProducts((prev) => prev.filter((p) => p._id !== id));
-                  toast.success("Product disabled.");
-                } catch {
-                  toast.error("Disable failed.");
-                }
-              }}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all uppercase tracking-widest"
-            >Confirm</button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-200 transition-all uppercase tracking-widest"
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: 8000 }
-    );
-  }, []);
-
-  // ── Optimistic save: update local state instead of refetching from server ──
+    // ── Optimistic save: update local state instead of refetching from server ──
   // OLD: called fetchProducts() after every add/edit = extra network request every time
   // NEW: for edit → patch the item in state; for add → prepend to list. Zero extra API call.
   const saveProduct = useCallback(async (data) => {
@@ -255,7 +222,6 @@ const Products = () => {
                     key={p._id}
                     product={p}
                     onEdit={openEditModal}
-                    onDelete={deleteProduct}
                     onToggleStatus={toggleStatus}
                   />
                 ))
@@ -354,7 +320,7 @@ const Products = () => {
 // ── ProductRow extracted as its own component ──
 // OLD: entire row JSX was inline inside the map() — every state change re-rendered ALL rows
 // NEW: separate component + React.memo = only the changed row re-renders, rest are skipped
-const ProductRow = React.memo(({ product: p, onEdit, onDelete, onToggleStatus }) => {
+const ProductRow = React.memo(({ product: p, onEdit, onToggleStatus }) => {
   // ── Resolve image: handle both array and string formats ──
   // OLD: p.image[0] || p.image[1] — breaks if image is a plain string (not array)
   // NEW: normalize to always get a usable string regardless of data shape
@@ -418,9 +384,6 @@ const ProductRow = React.memo(({ product: p, onEdit, onDelete, onToggleStatus })
         <div className="flex items-center justify-end gap-1">
           <button onClick={() => onEdit(p)} className="p-2 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-all">
             <Edit3 size={16} />
-          </button>
-          <button onClick={() => onDelete(p._id, p.name)} className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-            <Trash2 size={16} />
           </button>
         </div>
       </td>

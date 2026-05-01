@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { toast } from "../../src/utils/toast";
 import {
-  Users, Trash2, Mail, Phone, Search,
+  Users, Mail, Phone, Search,
   Loader2, ShieldOff, ShieldCheck, Eye, X,
   Package, Calendar, ChevronRight,
 } from "lucide-react";
@@ -24,7 +24,6 @@ const Customers = () => {
   const [users,        setUsers]        = useState([]);
   const [isLoading,    setIsLoading]    = useState(true);  // FIX: was "loading" — unified to "isLoading"
   const [searchTerm,   setSearchTerm]   = useState("");
-  const [processingId, setProcessingId] = useState(null);
   const [currentPage,  setCurrentPage]  = useState(1);
 
   // For order history modal
@@ -108,43 +107,6 @@ const Customers = () => {
   // ── Delete user with toast confirmation ──
   // FIX: was calling axios.put() to delete — should be DELETE method
   // FIX: token was read from component-level variable — now handled by interceptor
-  const deleteUser = useCallback((userId, name) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-stone-800">
-            Permanently remove <strong>{name}</strong>?
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                toast.dismiss(t.id);
-                setProcessingId(userId);
-                try {
-                  // FIX: was axios.put() — corrected to DELETE
-                  await api.delete(`/users/${userId}`);
-                  // Optimistic delete — no refetch needed
-                  setUsers((prev) => prev.filter((u) => u._id !== userId));
-                  toast.success("User removed.");
-                } catch (err) {
-                  toast.error(err.response?.data?.message || "Delete failed.");
-                } finally {
-                  setProcessingId(null);
-                }
-              }}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all uppercase tracking-widest"
-            >Confirm</button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-200 transition-all uppercase tracking-widest"
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: 8000 }
-    );
-  }, []);
-
   const openHistory  = useCallback((user) => { setSelectedUser(user); setIsHistoryOpen(true); }, []);
   const closeHistory = useCallback(() => { setIsHistoryOpen(false); setSelectedUser(null); }, []);
 
@@ -202,9 +164,7 @@ const Customers = () => {
                 <CustomerRow
                   key={user._id}
                   user={user}
-                  processingId={processingId}
                   onToggleBlock={toggleBlock}
-                  onDelete={deleteUser}
                   onViewHistory={openHistory}
                 />
               ))
@@ -285,7 +245,7 @@ const Customers = () => {
 // ── CustomerRow as memoized component ──
 // OLD: inline JSX in .map() — all rows re-rendered on any state change
 // NEW: React.memo — only the changed row re-renders
-const CustomerRow = React.memo(({ user, processingId, onToggleBlock, onDelete, onViewHistory }) => {
+const CustomerRow = React.memo(({ user, onToggleBlock, onViewHistory }) => {
   const initials = `${user.fname?.[0] || ""}${user.lname?.[0] || ""}`.toUpperCase();
 
   return (
@@ -379,17 +339,6 @@ const CustomerRow = React.memo(({ user, processingId, onToggleBlock, onDelete, o
             {user.isBlocked ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
           </button>
 
-          {/* Delete */}
-          <button
-            onClick={() => onDelete(user._id, `${user.fname} ${user.lname}`)}
-            disabled={processingId === user._id}
-            className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-50"
-            title="Delete customer"
-          >
-            {processingId === user._id
-              ? <Loader2 size={15} className="animate-spin" />
-              : <Trash2 size={15} />}
-          </button>
         </div>
       </td>
     </tr>

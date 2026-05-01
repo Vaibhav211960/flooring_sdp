@@ -1,11 +1,7 @@
 import express from "express";
-import User from "../model/user.model.js";
 import {
-  forgotPassword,
   loginUser,
   registerUser,
-  resetPassword,
-  validateResetToken,
 } from "../controller/auth.controller.js";
 import {
   getAllUsers,
@@ -17,16 +13,12 @@ import {
   deleteUser,   // FIX: was imported in controller but never registered as a route
 } from "../controller/user.controller.js";
 import verifyToken from "../middleware/auth.middleware.js";
-import adminAuth from "../middleware/admin.middleware.js";
 
 const router = express.Router();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 router.post("/login",  loginUser);
 router.post("/signup", registerUser);
-router.post("/forgot-password", forgotPassword);
-router.get("/reset-password/:token", validateResetToken);
-router.post("/reset-password/:token", resetPassword);
 
 // ── Logged-in user (self) ─────────────────────────────────────────────────────
 router.get("/me",                verifyToken, getMyProfile);

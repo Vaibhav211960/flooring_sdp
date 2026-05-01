@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { toast } from "../../src/utils/toast";
 import {
-  Star, Mail, Trash2, MessageSquare,
+  Star, Mail, MessageSquare,
   Calendar, User, Loader2, Search,
   SlidersHorizontal, CheckCircle2, XCircle,
 } from "lucide-react";
@@ -129,37 +129,6 @@ const Feedbacks = () => {
   // ── Delete with toast confirmation ──
   // FIX: was window.confirm() — replaced with toast confirmation pattern
   // FIX: delete failures were silent (console.error only) — now shows toast
-  const deleteFeedback = useCallback((id) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-stone-800">Delete this review permanently?</p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await api.delete(`/feedback/admin/${id}`);
-                  // Optimistic delete — no refetch
-                  setFeedbacks((prev) => prev.filter((fb) => fb._id !== id));
-                  toast.success("Review deleted.");
-                } catch {
-                  toast.error("Delete failed.");
-                }
-              }}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all uppercase tracking-widest"
-            >Confirm</button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-200 transition-all uppercase tracking-widest"
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: 8000 }
-    );
-  }, []);
-
   const clearFilters = () => {
     setSearchTerm("");
     setRatingFilter("");
@@ -281,7 +250,6 @@ const Feedbacks = () => {
               feedback={fb}
               onApprove={approveFeedback}
               onReject={rejectFeedback}
-              onDelete={deleteFeedback}
             />
           ))
         ) : (
@@ -352,7 +320,7 @@ const Feedbacks = () => {
 // ── FeedbackCard as memoized component ──
 // OLD: inline JSX in .map() — all cards re-rendered on any state change
 // NEW: React.memo — only the changed card re-renders
-const FeedbackCard = React.memo(({ feedback: fb, onApprove, onReject, onDelete }) => {
+const FeedbackCard = React.memo(({ feedback: fb, onApprove, onReject }) => {
 
   // Status badge derived from fb fields — no extra state needed
   const statusBadge = fb.isApproved
@@ -450,13 +418,6 @@ const FeedbackCard = React.memo(({ feedback: fb, onApprove, onReject, onDelete }
           </button>
         )}
 
-        {/* Delete */}
-        <button
-          onClick={() => onDelete(fb._id)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition-all border border-red-100"
-        >
-          <Trash2 size={13} /> Delete
-        </button>
       </div>
     </div>
   );

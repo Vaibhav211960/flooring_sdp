@@ -267,10 +267,15 @@ export const getReportConfig = async (_req, res) => {
 /** CUSTOMER: Place an order */
 export const createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, netBill , paymentMode, paymentMethod } = req.body;
-    const userId = "69a125be11ed30f46315678c";
+    const { items, shippingAddress, netBill, paymentMode } = req.body;
+    const userId = req.user?._id;
     if (!userId) return res.status(401).json({ message: "User authentication failed" });
     if (!items || items.length === 0) return res.status(400).json({ message: "No items in order" });
+
+    const allowedPaymentModes = ["COD", "Net Banking", "UPI"];
+    if (!allowedPaymentModes.includes(paymentMode)) {
+      return res.status(400).json({ message: "Invalid payment mode selected." });
+    }
 
     const productIds = items.map((item) => item.productId).filter(Boolean);
     let productMap = {};
@@ -330,7 +335,8 @@ export const createOrder = async (req, res) => {
 
     try {
       const newPayment = await Payment.create({
-        paymentMode: paymentMethod, amount: netBill,
+        paymentMode,
+        amount: netBill,
         paymentStatus: paymentMode === "COD" ? "processing" : "confirmed",
         refundStatus: paymentMode === "COD" ? "not_required" : "pending",
         orderId: new mongoose.Types.ObjectId(),
@@ -355,7 +361,7 @@ export const createOrder = async (req, res) => {
     }
   } catch (err) {
     console.error("Order Error:", err);
-    res.status(500).json({ message: err});
+    res.status(500).json({ message: err.message || "Failed to place order." });
   }
 };
 

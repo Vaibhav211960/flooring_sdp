@@ -6,6 +6,7 @@ import {
   deleteMyFeedback,
   getMyFeedbackHistory,
   getProductReviews,
+  getFeaturedReviews,
   getAdminFeedbackLedger,
   approveFeedback,   // NEW: was missing
   rejectFeedback,    // NEW: was missing
@@ -20,6 +21,7 @@ router.post("/submit",                                  verifyToken, submitVerif
 router.get("/verify/verify-eligibility/:productId",    verifyToken, checkFeedbackEligibility);
 router.get("/my-history",                              verifyToken, getMyFeedbackHistory);
 router.get("/product/:productId",                      getProductReviews);
+router.get("/featured",                                getFeaturedReviews);
 router.put("/:id",                                     verifyToken, editMyFeedback);
 router.delete("/:id",                                  verifyToken, deleteMyFeedback);
 

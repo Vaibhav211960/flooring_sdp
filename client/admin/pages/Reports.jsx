@@ -33,7 +33,6 @@ const REPORT_ENDPOINTS = {
   categories: "/orders/admin/reports/categories",
   customers: "/orders/admin/reports/customers",
   payments: "/orders/admin/reports/payments",
-  orderSize: "/orders/admin/reports/order-size",
 };
 
 const TABS = [
@@ -43,9 +42,7 @@ const TABS = [
   { key: "categories", label: "By Category", icon: Layers },
   { key: "customers", label: "Customers", icon: Users },
   { key: "payments", label: "Payments", icon: CreditCard },
-  { key: "orderSize", label: "Order Size", icon: Boxes },
-];
-
+]
 const tabKeys = TABS.map((t) => t.key);
 
 let _XLSX = null;

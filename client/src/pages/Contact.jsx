@@ -144,7 +144,7 @@ export default function Contact() {
                 <ContactDetail
                   icon={<Mail size={18} />}
                   label="General Inquiry"
-                  value="sales@inscapefloors.com"
+                  value="inscapefloors123@gmail.com"
                 />
                 <ContactDetail
                   icon={<Clock size={18} />}
@@ -159,18 +159,7 @@ export default function Contact() {
                 Follow our craft
               </p>
               <div className="flex gap-4">
-                <a
-                  href="#"
-                  className="h-10 w-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-amber-500 hover:border-amber-500 hover:text-white transition-all"
-                >
-                  <Instagram size={16} />
-                </a>
-                <a
-                  href="#"
-                  className="h-10 w-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-amber-500 hover:border-amber-500 hover:text-white transition-all"
-                >
-                  <Linkedin size={16} />
-                </a>
+               
               </div>
             </div>
           </div>

@@ -5,7 +5,7 @@ import Category from "../model/category.model.js";
  */
 export const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
+    const categories = await Category.find({ isActive: true }).sort({ createdAt: -1 });
     res.status(200).json({ categories });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -17,7 +17,7 @@ export const getAllCategories = async (req, res) => {
  */
 export const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const category = await Category.findOne({ _id: req.params.id, isActive: true });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }

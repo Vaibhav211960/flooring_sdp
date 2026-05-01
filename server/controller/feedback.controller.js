@@ -193,6 +193,28 @@ export const getProductReviews = async (req, res) => {
 };
 
 /**
+ * PUBLIC: Get approved reviews for homepage/social proof sections
+ */
+export const getFeaturedReviews = async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 3, 1), 12);
+
+    const feedbacks = await Feedback.find({
+      isApproved: true,
+    })
+      .populate("userId", "userName")
+      .populate("productId", "name")
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    res.status(200).json({ feedbacks });
+  } catch (err) {
+    console.error("FEATURED_REVIEWS_ERROR:", err.message);
+    res.status(500).json({ message: "Server error while fetching featured reviews." });
+  }
+};
+
+/**
  * ADMIN: Get all platform feedback (all statuses)
  */
 export const getAdminFeedbackLedger = async (req, res) => {

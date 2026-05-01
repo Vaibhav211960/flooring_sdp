@@ -6,11 +6,17 @@ import Category from "../model/category.model.js";
  */
 export const getAllSubCategories = async (req, res) => {
   try {
-    const subCategories = await SubCategory.find()
-      .populate("categoryId", "name")
+    const subCategories = await SubCategory.find({ isActive: true })
+      .populate({
+        path: "categoryId",
+        select: "name isActive",
+        match: { isActive: true },
+      })
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ subCategories });
+    res.status(200).json({
+      subCategories: subCategories.filter((item) => item.categoryId),
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
@@ -21,10 +27,16 @@ export const getAllSubCategories = async (req, res) => {
  */
 export const getSubCategoryById = async (req, res) => {
   try {
-    const subCategory = await SubCategory.findById(req.params.id)
-      .populate("categoryId", "name");
+    const subCategory = await SubCategory.findOne({
+      _id: req.params.id,
+      isActive: true,
+    }).populate({
+      path: "categoryId",
+      select: "name isActive",
+      match: { isActive: true },
+    });
 
-    if (!subCategory) {
+    if (!subCategory || !subCategory.categoryId) {
       return res.status(404).json({ message: "SubCategory not found" });
     }
 
@@ -41,7 +53,12 @@ export const getSubCategoriesByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
 
-    const subCategories = await SubCategory.find({ categoryId })
+    const category = await Category.findOne({ _id: categoryId, isActive: true });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const subCategories = await SubCategory.find({ categoryId, isActive: true })
       .sort({ createdAt: -1 });
 
     res.status(200).json({ subCategories });

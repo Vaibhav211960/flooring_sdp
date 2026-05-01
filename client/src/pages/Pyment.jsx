@@ -10,6 +10,16 @@ import Footer from "../components/Footer";
 import { useCart } from "../context/CartContext";
 import api from "../utils/api";
 
+const getErrorMessage = (error, fallback = "Transaction failed. Please check your connection.") => {
+  const message = error?.response?.data?.message;
+  if (typeof message === "string") return message;
+  if (Array.isArray(message)) return message.join(", ");
+  if (message && typeof message === "object") {
+    return message.message || message.name || fallback;
+  }
+  return error?.message || fallback;
+};
+
 export default function Payment() {
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -64,7 +74,6 @@ export default function Payment() {
         },
         netBill,
         paymentMode,
-        paymentMethod: paymentMode.toLowerCase() === "net banking" ? "card" : paymentMode.toLowerCase(),
       };
 
       // api instance auto-injects userToken via interceptor
@@ -92,7 +101,7 @@ export default function Payment() {
         });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Transaction failed. Please check your connection.");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

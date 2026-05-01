@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../../src/utils/adminApi";
-import { Plus, Edit3, Trash2, ImageIcon, AlignLeft, Globe, Loader2, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Edit3, ImageIcon, AlignLeft, Globe, Loader2, X, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "../../src/utils/toast";
 
 
@@ -316,7 +316,7 @@ const CategoryRow = React.memo(({ category: cat, onEdit, onDelete, onToggleStatu
           <Edit3 size={16} />
         </button>
         <button onClick={() => onDelete(cat._id, cat.name)} className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-          <Trash2 size={16} />
+          
         </button>
       </div>
     </td>

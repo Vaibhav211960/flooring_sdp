@@ -23,6 +23,10 @@ import OrderDetails from "./pages/OrderDetails.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import ShippingPolicy from "./pages/ShippingPolicy.jsx";
+import FAQSupport from "./pages/FAQSupport.jsx";
+import PrivacyNotice from "./pages/PrivacyNotice.jsx";
+import TermsPage from "./pages/TermsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import BuyAll from "./pages/BuyAll.jsx";
 import Payment from "./pages/Pyment.jsx";
@@ -78,6 +82,10 @@ function App() {
               />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/shipping" element={<ShippingPolicy />} />
+              <Route path="/faq" element={<FAQSupport />} />
+              <Route path="/privacy" element={<PrivacyNotice />} />
+              <Route path="/terms" element={<TermsPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/products" element={<Product />} />
@@ -138,7 +146,7 @@ function App() {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/reset-password/:token/*" element={<ResetPassword />} />
 
               {/* ================= ADMIN ROUTES ================= */}
               <Route path="/admin" element={<AdminLayout />}>

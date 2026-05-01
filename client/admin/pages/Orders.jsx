@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Eye, X, Package, Calendar, Phone,
   Printer, Loader2, Search, SlidersHorizontal,
-  Trash2, FileText,
+  FileText,
 } from "lucide-react";
 import { toast } from "../../src/utils/toast";
 
@@ -116,11 +116,6 @@ const Orders = () => {
   }, []);
 
   // ── Optimistic delete — removes from local state, no refetch ──
-  const handleDeleteOrder = useCallback((orderId) => {
-    setOrders((prev) => prev.filter((o) => o._id !== orderId));
-    closeDetail();
-  }, [closeDetail]);
-
   const clearFilters = () => {
     setSearchTerm("");
     setFilterDate("");
@@ -305,7 +300,6 @@ const Orders = () => {
           order={selectedOrder}
           onClose={closeDetail}
           onStatusUpdate={handleStatusUpdate}
-          onDelete={handleDeleteOrder}
         />
       )}
     </div>
@@ -357,7 +351,7 @@ const OrderRow = React.memo(({ order, onView }) => {
 OrderRow.displayName = "OrderRow";
 
 // ── Order Detail Modal ────────────────────────────────────────────────────────
-const OrderDetailModal = ({ order, onClose, onStatusUpdate, onDelete }) => {
+const OrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [newStatus,  setNewStatus]  = useState(order.orderStatus);
   // NEW: internal notes field — Module 5 requirement
@@ -397,40 +391,6 @@ const OrderDetailModal = ({ order, onClose, onStatusUpdate, onDelete }) => {
   // ── Delete with toast confirmation — replaces window.confirm() ──
   // OLD: window.confirm() — ugly browser dialog, breaks your design
   // NEW: same toast confirmation pattern used in Products/Categories/etc.
-  const handleDeleteOrder = () => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-stone-800">
-            Permanently delete order <strong>#{order._id.slice(-8).toUpperCase()}</strong>?
-          </p>
-          <p className="text-xs text-stone-500">This cannot be undone.</p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await api.delete(`/orders/admin/delete/${order._id}`);
-                  // Optimistic delete — removes from parent state, no refetch
-                  onDelete(order._id);
-                  toast.success("Order removed from registry.");
-                } catch {
-                  toast.error("Delete failed. Authorization required.");
-                }
-              }}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all uppercase tracking-widest"
-            >Confirm Delete</button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-200 transition-all uppercase tracking-widest"
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: 10000 }
-    );
-  };
-
   const statusCfg = getStatusCfg(order.orderStatus);
 
   return (
@@ -617,13 +577,7 @@ const OrderDetailModal = ({ order, onClose, onStatusUpdate, onDelete }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 bg-stone-50 border-t border-stone-100 flex justify-between items-center shrink-0">
-          <button
-            onClick={handleDeleteOrder}
-            className="flex items-center gap-2 text-[10px] font-bold uppercase text-rose-400 hover:text-rose-600 tracking-widest transition-colors"
-          >
-            <Trash2 size={13} /> Delete Record
-          </button>
+        <div className="px-8 py-5 bg-stone-50 border-t border-stone-100 flex justify-end items-center shrink-0">
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl border border-stone-200 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:bg-stone-100 transition-all"

@@ -8,11 +8,13 @@ import api from "../utils/api";
 import { toast } from "../utils/toast";
 
 export default function CategoryPage() {
+  const ITEMS_PER_PAGE = 8;
   const navigate = useNavigate();
   const [subcategories, setSubcategories] = useState([]);
   const [isLoading,     setIsLoading]     = useState(true);
   const [error,         setError]         = useState(null);
   const [searchQuery,   setSearchQuery]   = useState("");
+  const [currentPage,   setCurrentPage]   = useState(1);
 
   // useCallback: stable fetch reference
   // FIX: was plain async in useEffect — retry button called window.location.reload()
@@ -22,7 +24,7 @@ export default function CategoryPage() {
       setIsLoading(true);
       setError(null);
       const res = await api.get("/subcategories");
-      setSubcategories(res.data.subCategories || []);
+      setSubcategories((res.data.subCategories || []).filter((item) => item.isActive !== false));
     } catch (err) {
       const message = err.response?.data?.message || "Failed to load collections. Please try again.";
       setError(message);
@@ -44,6 +46,19 @@ export default function CategoryPage() {
       sub.description?.toLowerCase().includes(s)
     );
   }, [subcategories, searchQuery]);
+
+  useEffect(() => { setCurrentPage(1); }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubcategories.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedSubcategories = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSubcategories.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredSubcategories, currentPage]);
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
@@ -118,17 +133,80 @@ export default function CategoryPage() {
 
             {!isLoading && !error && (
               filteredSubcategories.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredSubcategories.map((sub) => (
-                    <div
-                      key={sub._id || sub.id}
-                      onClick={() => navigate(`/category/subcategory/${sub._id || sub.id}`)}
-                      className="group block h-full transition-all duration-300 active:scale-[0.98] cursor-pointer hover:-translate-y-1"
-                    >
-                      <CategoryCard cat={sub} />
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {paginatedSubcategories.map((sub) => (
+                      <div
+                        key={sub._id || sub.id}
+                        onClick={() => navigate(`/category/subcategory/${sub._id || sub.id}`)}
+                        className="group block h-full transition-all duration-300 active:scale-[0.98] cursor-pointer hover:-translate-y-1"
+                      >
+                        <CategoryCard cat={sub} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {filteredSubcategories.length > ITEMS_PER_PAGE && (
+                    <div className="mt-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <p className="text-[11px] text-stone-400 font-medium uppercase tracking-widest">
+                        Showing{" "}
+                        <span className="text-stone-700 font-bold">
+                          {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredSubcategories.length)}
+                        </span>
+                        {" "}of{" "}
+                        <span className="text-stone-700 font-bold">{filteredSubcategories.length}</span>
+                        {" "}collections
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-1">
+                        <button
+                          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-[10px] font-bold uppercase tracking-widest text-stone-500 bg-white hover:bg-stone-50 hover:border-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                          ← Prev
+                        </button>
+
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((page) =>
+                            page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 1
+                          )
+                          .reduce((acc, page, idx, arr) => {
+                            if (idx > 0 && page - arr[idx - 1] > 1) acc.push(`gap-${page}`);
+                            acc.push(page);
+                            return acc;
+                          }, [])
+                          .map((item) =>
+                            typeof item === "string" ? (
+                              <span key={item} className="px-1.5 text-stone-300 text-xs select-none">…</span>
+                            ) : (
+                              <button
+                                key={item}
+                                onClick={() => setCurrentPage(item)}
+                                className={`w-9 h-9 rounded-xl text-[11px] font-bold transition-all border ${
+                                  currentPage === item
+                                    ? "bg-stone-900 text-amber-400 border-stone-900 shadow-md"
+                                    : "bg-white text-stone-500 border-stone-200 hover:bg-stone-50 hover:border-stone-300"
+                                }`}
+                              >
+                                {item}
+                              </button>
+                            )
+                          )}
+
+                        <button
+                          onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                          disabled={currentPage === totalPages}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-[10px] font-bold uppercase tracking-widest text-stone-500 bg-white hover:bg-stone-50 hover:border-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next →
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-24 border-2 border-dashed border-stone-200 rounded-2xl">
                   <div className="bg-stone-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">

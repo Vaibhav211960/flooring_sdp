@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight,
@@ -27,26 +27,13 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-  const [isValidLink, setIsValidLink] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        await api.get(`/users/reset-password/${token}`);
-        setIsValidLink(true);
-      } catch (err) {
-        setError(err.response?.data?.message || "Reset link is invalid or has expired.");
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    checkToken();
-  }, [token]);
+  const normalizedToken = useMemo(
+    () => String(token || "").trim().replace(/[^a-f0-9]/gi, ""),
+    [token]
+  );
 
   const passwordError = useMemo(() => validatePassword(password), [password]);
   const confirmError = useMemo(() => {
@@ -57,6 +44,13 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!normalizedToken) {
+      const message = "Reset link is invalid or incomplete.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
 
     const message = passwordError || confirmError;
     if (message) {
@@ -69,11 +63,11 @@ export default function ResetPassword() {
     setError("");
 
     try {
-      await api.post(`/users/reset-password/${token}`, {
+      const res = await api.post(`/auth/reset-password/${normalizedToken}`, {
         password,
         confirmPassword,
       });
-      toast.success("Password reset successfully.");
+      toast.success(res.data?.message || "Password reset successfully.");
       navigate("/login");
     } catch (err) {
       const message = err.response?.data?.message || "Failed to reset password.";
@@ -116,102 +110,91 @@ export default function ResetPassword() {
       <div className="flex-1 flex items-center justify-center py-16 px-6">
         <div className="w-full max-w-[450px] bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
           <div className="p-8 md:p-10">
-            {isChecking ? (
-              <div className="py-10 text-center space-y-4">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto" />
-                <p className="text-sm text-stone-500">Checking your reset link...</p>
-              </div>
-            ) : !isValidLink ? (
-              <div className="py-6 text-center space-y-5">
-                <h2 className="font-serif text-2xl font-bold text-stone-900">Link Unavailable</h2>
+            <>
+              <div className="mb-8">
+                <h2 className="font-serif text-2xl font-bold text-stone-900 mb-2">
+                  Reset Your Password
+                </h2>
                 <p className="text-stone-500 text-sm leading-relaxed">
-                  {error || "This reset link is invalid or has already expired."}
+                  Enter your new password below. It will update your account immediately.
                 </p>
-                <Link
-                  to="/forgot-password"
-                  className="block w-full h-12 bg-stone-900 text-white rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center justify-center"
-                >
-                  Request New Link
-                </Link>
               </div>
-            ) : (
-              <>
-                <div className="mb-8">
-                  <h2 className="font-serif text-2xl font-bold text-stone-900 mb-2">
-                    Reset Your Password
-                  </h2>
-                  <p className="text-stone-500 text-sm leading-relaxed">
-                    Enter your new password below. It will update your account immediately.
-                  </p>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
+                      className="w-full pl-10 pr-12 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:border-amber-500 focus:outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-600"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          setError("");
-                        }}
-                        className="w-full pl-10 pr-12 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:border-amber-500 focus:outline-none transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((value) => !value)}
-                        className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setError("");
+                      }}
+                      className="w-full pl-10 pr-12 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:border-amber-500 focus:outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((value) => !value)}
+                      className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-600"
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => {
-                          setConfirmPassword(e.target.value);
-                          setError("");
-                        }}
-                        className="w-full pl-10 pr-12 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:border-amber-500 focus:outline-none transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((value) => !value)}
-                        className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-600"
-                      >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
+                {error && (
+                  <div className="bg-red-50 border border-red-100 px-4 py-3 rounded-xl">
+                    <p className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</p>
                   </div>
+                )}
 
-                  {error && (
-                    <div className="bg-red-50 border border-red-100 px-4 py-3 rounded-xl">
-                      <p className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</p>
-                    </div>
-                  )}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
+                </button>
+              </form>
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-12 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
-                  </button>
-                </form>
-              </>
-            )}
+              <div className="mt-6 text-center">
+                <Link
+                  to="/forgot-password"
+                  className="text-[10px] uppercase tracking-widest font-bold text-stone-500 hover:text-amber-700 transition-colors"
+                >
+                  Need a new reset link?
+                </Link>
+              </div>
+            </>
           </div>
         </div>
       </div>

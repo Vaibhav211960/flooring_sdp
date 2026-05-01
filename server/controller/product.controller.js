@@ -6,16 +6,20 @@ import SubCategory from "../model/subcategory.model.js";
  */
 export const getAllProducts = async (req, res) => {
   try {
-    // 3. Fetch products with the new schema fields
-    const products = await Product.find()
-      .populate("subCategoryId", "name")
+    const products = await Product.find({ isActive: true })
+      .populate({
+        path: "subCategoryId",
+        select: "name isActive",
+        match: { isActive: true },
+      })
       .sort({ createdAt: -1 });
 
-    // 4. Return success status with count (useful for admin dashboards)
+    const visibleProducts = products.filter((product) => product.subCategoryId);
+
     res.status(200).json({ 
       success: true,
-      count: products.length,
-      products 
+      count: visibleProducts.length,
+      products: visibleProducts,
     });
   } catch (err) {
     console.error("Fetch Products Error:", err.message);
@@ -30,14 +34,14 @@ export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Fetch the product
-    // We remove the hard 'isActive' check here so Admins can still fetch it.
-    // If you only want users to see active products, handle that in the Frontend 
-    // or add a check: if (!product.isActive && req.user.role !== 'admin')
-    const product = await Product.findById(id)
-      .populate("subCategoryId", "name");
+    const product = await Product.findOne({ _id: id, isActive: true })
+      .populate({
+        path: "subCategoryId",
+        select: "name isActive",
+        match: { isActive: true },
+      });
 
-    if (!product) {
+    if (!product || !product.subCategoryId) {
       return res.status(404).json({ 
         success: false, 
         message: "The specified material specification could not be found." 
@@ -82,7 +86,7 @@ export const getProductsBySubCategory = async (req, res) => {
     // We filter by isActive so users don't see out-of-stock/archived items
     const products = await Product.find({ 
       subCategoryId: catId,
-      isActive: true 
+      isActive: true,
     })
     .sort({ createdAt: -1 });
 

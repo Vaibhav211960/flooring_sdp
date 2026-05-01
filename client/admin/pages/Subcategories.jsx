@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../../src/utils/adminApi";
 import {
-  Plus, Edit3, Trash2, GitCommit, Link as LinkIcon,
+  Plus, Edit3, GitCommit, Link as LinkIcon,
   ImageIcon, AlignLeft, Loader2, X, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { toast } from "../../src/utils/toast";
@@ -89,41 +89,7 @@ const SubCategories = () => {
     }
   }, []);
 
-  const deleteSubCategory = useCallback((id, name) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-stone-800">
-            Remove <strong>{name}</strong>?
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await api.delete(`/subcategories/${id}`);
-                  // Optimistic delete
-                  setSubCategories((prev) => prev.filter((sc) => sc._id !== id));
-                  subCategoryCache = null; // invalidate cache
-                  toast.success("Sub-category removed.");
-                } catch {
-                  toast.error("Delete failed.");
-                }
-              }}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all uppercase tracking-widest"
-            >Confirm</button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-200 transition-all uppercase tracking-widest"
-            >Cancel</button>
-          </div>
-        </div>
-      ),
-      { duration: 8000 }
-    );
-  }, []);
-
-  // ── Optimistic save ──
+    // ── Optimistic save ──
   // FIX: was sending `status` field but table displayed `isActive` — inconsistent field names
   // NEW: always send `isActive` as boolean — one source of truth
   const saveSubCategory = useCallback(async (data) => {
@@ -216,7 +182,6 @@ const SubCategories = () => {
                   key={sc._id}
                   subCategory={sc}
                   onEdit={openEditModal}
-                  onDelete={deleteSubCategory}
                   onToggleStatus={toggleStatus}
                 />
               ))}
@@ -288,7 +253,7 @@ const SubCategories = () => {
 // ── SubCategoryRow as its own memoized component ──
 // OLD: inline JSX inside .map() — all rows re-rendered on every state change
 // NEW: React.memo — only the changed row re-renders
-const SubCategoryRow = React.memo(({ subCategory: sc, onEdit, onDelete, onToggleStatus }) => (
+const SubCategoryRow = React.memo(({ subCategory: sc, onEdit, onToggleStatus }) => (
   <tr className="hover:bg-stone-50/50 transition-colors group">
     <td className="p-5">
       <div className="h-12 w-16 rounded-lg overflow-hidden border border-stone-200 bg-stone-100 flex items-center justify-center">
@@ -328,9 +293,6 @@ const SubCategoryRow = React.memo(({ subCategory: sc, onEdit, onDelete, onToggle
       <div className="flex items-center justify-end gap-1">
         <button onClick={() => onEdit(sc)} className="p-2 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-all">
           <Edit3 size={16} />
-        </button>
-        <button onClick={() => onDelete(sc._id, sc.name)} className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-          <Trash2 size={16} />
         </button>
       </div>
     </td>
