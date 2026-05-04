@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 import { Button } from "../ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/Sheet.jsx";
 import { CartSheet } from "../components/CartSheet.jsx";
 // FIX: was reading "UserToken" directly — now uses unified auth utils
 import { getUserToken, clearUserToken } from "../utils/auth.js";
