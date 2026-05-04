@@ -4,7 +4,7 @@ import { Truck, Award, PenTool, ShieldCheck, Star, ArrowRight, Loader2 } from "l
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { CategoryCard } from "../components/CategoryCard.jsx";
-import { FeatureBox } from "../ui/featureBox.jsx";
+import { FeatureBox } from "../ui/FeatureBox.jsx";
 import { Button } from "../ui/button.jsx";
 import heroImage from "../assets/elegant_living_room_with_hardwood_flooring.png";
 import api from "../utils/api";
