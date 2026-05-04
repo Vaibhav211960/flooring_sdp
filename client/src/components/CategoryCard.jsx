@@ -1,0 +1,69 @@
+import React from "react";
+import { ArrowRight } from "lucide-react";
+
+export function CategoryCard({ cat }) {
+  return (
+    <div className="group cursor-pointer flex flex-col h-full bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden hover:shadow-md hover:border-stone-300 transition-all duration-300">
+
+      {/* Image */}
+      <div className="relative overflow-hidden aspect-[4/3]">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent z-10" />
+        <img
+          src={
+            cat?.image ||
+            "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTdYohtT-PRFqia7Flnt0cp2Db5e8nUDdRnxabNuR1IYzAbnSZTb8bl8wuq_Fz6KnYvowo-I9JgFI8Ppf_pbkrenu5Q_MyOCFp8xdPTbabH8eK4HaLlxBq7"
+          }
+          alt={cat.name}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute bottom-4 left-4 z-20 flex flex-col gap-2">
+          <span className="inline-flex items-center rounded-full bg-black/50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+            View Collection
+          </span>
+          {cat.startingPricePerSqft && (
+            <span className="inline-flex items-center rounded-full bg-amber-100/90 text-amber-900 px-3 py-1 text-[10px] font-bold">
+              From ₹{cat.startingPricePerSqft}/sqft
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-col gap-3 px-5 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-serif text-lg font-semibold text-stone-900 group-hover:text-amber-800 transition-colors">
+              {cat.name}
+            </h3>
+            {cat.description && (
+              <p className="text-xs text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
+                {cat.description}
+              </p>
+            )}
+          </div>
+          <ArrowRight className="mt-1 h-4 w-4 text-stone-400 group-hover:text-amber-700 group-hover:translate-x-1 transition-all shrink-0" />
+        </div>
+
+        {/* Subcategory pills */}
+        {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {cat.subcategories.slice(0, 3).map((sub) => (
+              <span
+                key={sub.id}
+                className="inline-flex items-center rounded-full bg-stone-50 border border-stone-200 px-2.5 py-0.5 text-[10px] text-stone-600 group-hover:bg-amber-50 group-hover:border-amber-200 transition-colors"
+              >
+                {sub.name}
+              </span>
+            ))}
+            {cat.subcategories.length > 3 && (
+              <span className="text-[10px] text-stone-400 self-center font-medium">
+                +{cat.subcategories.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
