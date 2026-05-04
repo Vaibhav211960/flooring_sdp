@@ -18,7 +18,7 @@ import Orders from "./pages/Order.jsx";
 import OrderHistory from "./pages/OrderHistory.jsx";
 import ProductDetails from "./pages/ProductDetails.jsx";
 import Cart from "./pages/Cart.jsx";
-import BuyNow from "./pages/buyNow.jsx";
+import BuyNow from "./pages/BuyNow.jsx";
 import OrderDetails from "./pages/OrderDetails.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";

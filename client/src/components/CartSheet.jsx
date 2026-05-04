@@ -6,10 +6,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "../ui/sheet.jsx";
+} from "../ui/Sheet.jsx";
 import { Button } from "../ui/button.jsx";
 import { ShoppingCart, X } from "lucide-react";
-import { ScrollArea } from "../ui/scrollArea.jsx";
+import { ScrollArea } from "../ui/ScrollArea.jsx";
 import { useCart } from "../context/CartContext";
 
 export function CartSheet() {

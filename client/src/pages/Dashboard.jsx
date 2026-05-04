@@ -21,11 +21,8 @@ import {
   Layers,
   CreditCard,
 } from "lucide-react";
-
-import { useApp } from "../libs/AppProvider.jsx";
-
 export default function Dashboard() {
-  const { user } = useApp();
+  const user = null;
 
   // Dummy profile state (UI only)
   const [profile, setProfile] = useState({
