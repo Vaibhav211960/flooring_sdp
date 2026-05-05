@@ -10,7 +10,7 @@ import { toast } from "../../src/utils/toast";
 // ── Shared axios instance — same pattern as all other files ──
 // FIX: was using plain axios with repeated headers everywhere
 // NEW: one instance, token injected automatically via interceptor
-const api = axios.create({ baseURL: "http://localhost:5000/api" });
+const api = axios.create({ baseURL: "https://flooring-sdp.onrender.com/api" || "http://localhost:5000/api" });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
