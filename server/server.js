@@ -23,7 +23,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://flooring-sdp.vercel.app',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
